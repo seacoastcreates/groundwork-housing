@@ -1,0 +1,13 @@
+{
+  "trend_groups": [
+    "base",
+    "heat"
+  ],
+  "relative_groups": [
+    "base",
+    "afford",
+    "rent"
+  ],
+  "trend_params": {},
+  "relative_params": {}
+}

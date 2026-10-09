@@ -5,6 +5,6 @@ set -euo pipefail
 cd "$(dirname "$0")"
 PY="$PWD/.venv/bin/python"
 
-(cd backend && "$PY" -m ingest.download && "$PY" -m ingest.load)
+(cd backend && "$PY" -m ingest.download && "$PY" -m ingest.labor && "$PY" -m ingest.load)
 (cd ml && "$PY" -W ignore -u train.py)
 (cd backend && "$PY" -m ingest.publish)

@@ -1,0 +1,187 @@
+{
+  "trend": {
+    "study": "trend-20261009-1324",
+    "groups": [
+      "base",
+      "heat"
+    ],
+    "tune_years": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "holdout_years": [
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "trials": {
+      "COMPLETE": 42,
+      "PRUNED": 18
+    },
+    "best_tune_value": 3.3617388250094864,
+    "best_params": {
+      "objective": "regression_l1",
+      "n_estimators": 948,
+      "learning_rate": 0.009815345688533615,
+      "num_leaves": 13,
+      "min_child_samples": 65,
+      "subsample": 0.5909448569190378,
+      "colsample_bytree": 0.32209260830151465,
+      "reg_lambda": 0.2666264306609221,
+      "subsample_freq": 1
+    },
+    "param_importance": {
+      "n_estimators": 0.228,
+      "colsample_bytree": 0.226,
+      "reg_lambda": 0.188,
+      "objective": 0.145,
+      "subsample": 0.102,
+      "num_leaves": 0.052,
+      "learning_rate": 0.031,
+      "min_child_samples": 0.028
+    },
+    "holdout": {
+      "default": {
+        "mae": 3.2042,
+        "rank_ic": 0.4862,
+        "by_year": {
+          "2022": {
+            "mae": 4.8315,
+            "rank_ic": 0.3989
+          },
+          "2023": {
+            "mae": 2.5256,
+            "rank_ic": 0.4815
+          },
+          "2024": {
+            "mae": 3.0948,
+            "rank_ic": 0.4813
+          },
+          "2025": {
+            "mae": 2.3651,
+            "rank_ic": 0.5833
+          }
+        }
+      },
+      "tuned": {
+        "mae": 4.2062,
+        "rank_ic": 0.5023,
+        "by_year": {
+          "2022": {
+            "mae": 6.9594,
+            "rank_ic": 0.3715
+          },
+          "2023": {
+            "mae": 3.77,
+            "rank_ic": 0.5493
+          },
+          "2024": {
+            "mae": 3.6668,
+            "rank_ic": 0.5046
+          },
+          "2025": {
+            "mae": 2.4286,
+            "rank_ic": 0.584
+          }
+        }
+      },
+      "adopt": false
+    }
+  },
+  "relative": {
+    "study": "relative-20261009-1343",
+    "groups": [
+      "base",
+      "afford",
+      "rent"
+    ],
+    "tune_years": [
+      2017,
+      2019,
+      2021
+    ],
+    "holdout_years": [
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "trials": {
+      "COMPLETE": 28,
+      "PRUNED": 2
+    },
+    "best_tune_value": -0.27769700963785987,
+    "best_params": {
+      "objective": "regression_l1",
+      "n_estimators": 468,
+      "learning_rate": 0.10309184225716324,
+      "num_leaves": 20,
+      "min_child_samples": 772,
+      "subsample": 0.9405939602053187,
+      "colsample_bytree": 0.723429564322721,
+      "reg_lambda": 0.6566185636668199,
+      "subsample_freq": 1
+    },
+    "param_importance": {
+      "n_estimators": 0.353,
+      "colsample_bytree": 0.151,
+      "subsample": 0.127,
+      "reg_lambda": 0.101,
+      "num_leaves": 0.083,
+      "learning_rate": 0.08,
+      "min_child_samples": 0.069,
+      "objective": 0.036
+    },
+    "holdout": {
+      "default": {
+        "mae": 2.5209,
+        "rank_ic": 0.2277,
+        "by_year": {
+          "2022": {
+            "mae": 2.7374,
+            "rank_ic": 0.2009
+          },
+          "2023": {
+            "mae": 2.3482,
+            "rank_ic": 0.3065
+          },
+          "2024": {
+            "mae": 2.3321,
+            "rank_ic": 0.1686
+          },
+          "2025": {
+            "mae": 2.6659,
+            "rank_ic": 0.2349
+          }
+        }
+      },
+      "tuned": {
+        "mae": 2.5311,
+        "rank_ic": 0.2116,
+        "by_year": {
+          "2022": {
+            "mae": 2.7246,
+            "rank_ic": 0.1824
+          },
+          "2023": {
+            "mae": 2.4035,
+            "rank_ic": 0.2789
+          },
+          "2024": {
+            "mae": 2.3304,
+            "rank_ic": 0.1479
+          },
+          "2025": {
+            "mae": 2.6658,
+            "rank_ic": 0.2374
+          }
+        }
+      },
+      "adopt": false
+    }
+  }
+}

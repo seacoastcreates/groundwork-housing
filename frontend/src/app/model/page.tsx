@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { api, monthLabel, type LevelMetrics } from "@/lib/api";
 import { StatTile } from "@/components/ui";
+import { AblationTable, TuningCard } from "@/components/Experiments";
 
 export const metadata: Metadata = { title: "How it works" };
 
@@ -89,7 +90,7 @@ export default async function ModelPage() {
   if (!info?.metrics.backtest) {
     return <p className="text-ink-2">No backtest has been published yet.</p>;
   }
-  const { backtest: bt, test_years, redfin_lag_months, interval } = info.metrics;
+  const { backtest: bt, test_years, redfin_lag_months, interval, ablation, tuning } = info.metrics;
   const sortByMae = (o: Record<string, LevelMetrics>) => Object.entries(o).sort((a, b) => a[1].mae - b[1].mae);
   const rel = bt.relative.rel;
 
@@ -127,7 +128,9 @@ export default async function ModelPage() {
           </li>
           <li>
             <strong className="text-ink">Relative model:</strong> how each ZIP will do compared with its metro. Inputs
-            are the ZIP&apos;s history relative to its metro and its price level relative to the metro.
+            are the ZIP&apos;s history relative to its metro, its price level relative to the metro and the nation, the
+            change in its monthly mortgage payment, and (where Zillow tracks rents) its price-to-rent ratio and rent
+            growth relative to the metro.
           </li>
         </ul>
         <p>A ZIP&apos;s forecast is its metro&apos;s trend plus its relative forecast. Both are LightGBM models.</p>
@@ -154,6 +157,61 @@ export default async function ModelPage() {
                                                         ["top_decile_beat", "Top decile beat metro", share],
                                                         ["decile_spread", "Decile spread (pts)", pts]]} />
 
+      {ablation && (
+        <>
+          <h2 className="display mt-12 text-2xl font-semibold">Feature experiments</h2>
+          <div className="mt-3 space-y-3 text-ink-2">
+            <p>
+              Each candidate feature group was added on its own and run through the same walk-forward backtest. The bar
+              was set before looking at results: a trend group must lower metro error on average, in at least two-thirds
+              of the years it affects, and not hurt 2023 onward; a relative group must improve the within-metro ranking
+              on average and in two-thirds of years without raising error more than 1%. Groups that pass are combined,
+              and the combination is kept only if it beats the best single group.
+            </p>
+            <p>
+              One amendment, made after the first run: groups that only exist for part of history (Zillow market data
+              from 2018, rent from 2015) are judged on the years they change. That run also had a bug in which rows
+              without the new data lost the Redfin features too; both were fixed before the results below.
+            </p>
+          </div>
+          {ablation.trend && (
+            <>
+              <h3 className="mb-3 mt-6 font-semibold">Trend model (metros)</h3>
+              <AblationTable report={ablation.trend} kind="trend" />
+            </>
+          )}
+          {ablation.relative && (
+            <>
+              <h3 className="mb-3 mt-6 font-semibold">Relative model (ZIPs within their metro)</h3>
+              <AblationTable report={ablation.relative} kind="relative" />
+            </>
+          )}
+          {ablation.relative_round2 && (
+            <>
+              <h3 className="mb-3 mt-6 font-semibold">Relative model, round 2: groups added later, on top of round 1&apos;s winners</h3>
+              <AblationTable report={ablation.relative_round2} kind="relative" />
+            </>
+          )}
+          <p className="mt-2 text-xs text-muted">Differences are against the baseline; green is better.</p>
+        </>
+      )}
+
+      {tuning && (
+        <>
+          <h2 className="display mt-12 text-2xl font-semibold">Hyperparameter tuning</h2>
+          <p className="mb-4 mt-3 text-ink-2">
+            Optuna (Bayesian search with early stopping of bad trials) tuned each model using only the earlier test
+            years. The best settings and the defaults were then compared on later years the search never saw, and the
+            tuned settings were kept only if they won there. Tuning on the same years you report is the easiest way to
+            fool yourself with a backtest.
+          </p>
+          <div className="space-y-4">
+            {tuning.trend && <TuningCard report={tuning.trend} kind="trend" />}
+            {tuning.relative && <TuningCard report={tuning.relative} kind="relative" />}
+          </div>
+        </>
+      )}
+
       <h2 className="display mt-12 text-2xl font-semibold">Honest caveats</h2>
       <ul className="mt-3 list-disc space-y-2 pl-6 text-ink-2">
         <li>
@@ -174,6 +232,11 @@ export default async function ModelPage() {
         <li>
           Zillow publishes its own forecast. Its history isn&apos;t public, so this site archives each month&apos;s
           snapshot and will score it against ours as outcomes arrive.
+        </li>
+        <li>
+          Unemployment (BLS, via FRED) and national macro series are revised after release, and the backtest uses
+          today&apos;s revised values with a one-month publication lag. That flatters those features slightly; the
+          price, listing and rate data are not materially revised.
         </li>
         <li>This is a forecast of an index for an area, not an appraisal of any particular home.</li>
       </ul>

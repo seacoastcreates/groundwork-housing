@@ -24,10 +24,11 @@ def _errors(pred: np.ndarray, actual: np.ndarray) -> dict:
     return {"mae": float(np.abs(e).mean()), "bias": float(e.mean())}
 
 
-def _folds(markets: pd.DataFrame, zips: pd.DataFrame):
-    for yr in TEST_YEARS:
+def _folds(markets: pd.DataFrame, zips: pd.DataFrame, years=TEST_YEARS):
+    for yr in years:
         mt = markets[(markets.origin.dt.year == yr) & markets.y.notna()]
-        zt = zips[(zips.origin.dt.year == yr) & zips.y.notna()]
+        # A few parent metros have gaps in Zillow's series; rows with no relative target can't be scored.
+        zt = zips[(zips.origin.dt.year == yr) & zips.y.notna() & zips.y_rel.notna()]
         if mt.empty or zt.empty:
             continue
         cutoff = min(mt.origin.min(), zt.origin.min()) - HORIZON
@@ -40,7 +41,7 @@ def run(markets: pd.DataFrame, zips: pd.DataFrame, log=print) -> tuple[pd.DataFr
     for yr, mtr, mt, ztr, zt in _folds(markets, zips):
         mt = mt.copy()
         mt["pred_trend"] = TrendModel().fit(mtr).predict(mt)
-        mt["pred_trend_core"] = TrendModel(use_heat=False).fit(mtr).predict(mt)
+        mt["pred_trend_core"] = TrendModel(groups=["base"]).fit(mtr).predict(mt)
         mt["pred_damped"] = damped_momentum(mt)
         metros = mt[mt.kind == "msa"]
         for name in ("pred_trend", "pred_trend_core", "pred_damped"):
@@ -73,6 +74,40 @@ def run(markets: pd.DataFrame, zips: pd.DataFrame, log=print) -> tuple[pd.DataFr
         log(f"  backtest {yr}: metro MAE {_errors(metros.pred_trend, metros.y)['mae']:.2f}, "
             f"zip MAE {_errors(zt.pred_two_part, zt.y)['mae']:.2f}")
     return pd.DataFrame(rows), pd.concat(preds, ignore_index=True)
+
+
+def fold_split(panel: pd.DataFrame, years):
+    """(year, train, test) for one panel, with the same leakage rule as the full backtest."""
+    for yr in years:
+        test = panel[(panel.origin.dt.year == yr) & panel.y.notna()]
+        if "y_rel" in panel:
+            test = test[test.y_rel.notna()]
+        if test.empty:
+            continue
+        yield yr, panel[panel.origin <= test.origin.min() - HORIZON], test
+
+
+def score_trend(markets: pd.DataFrame, make_model, years) -> pd.DataFrame:
+    """Per-year metro MAE, bias and cross-metro rank correlation for a trend-model variant."""
+    rows = []
+    for yr, train, test in fold_split(markets, years):
+        pred = make_model().fit(train).predict(test)
+        m = (test.kind == "msa").to_numpy()
+        t = test[m].assign(pred=pred[m])
+        rows.append(dict(year=yr, **_errors(t.pred.to_numpy(), t.y.to_numpy()),
+                         rank_ic=_rank_ic(t, "pred", "y", ["origin"])))
+    return pd.DataFrame(rows)
+
+
+def score_relative(zips: pd.DataFrame, make_model, years) -> pd.DataFrame:
+    """Per-year error and within-metro ranking for a relative-model variant, scored on y_rel directly
+    (no trend model involved, so variants are compared on the relative part alone)."""
+    rows = []
+    for yr, train, test in fold_split(zips, years):
+        t = test.assign(pred=make_model().fit(train).predict(test))
+        rows.append(dict(year=yr, **_errors(t.pred.to_numpy(), t.y_rel.to_numpy()),
+                         rank_ic=_rank_ic(t, "pred", "y_rel", ["origin", "parent_id"]), **_decile_spread(t, "pred")))
+    return pd.DataFrame(rows)
 
 
 def _decile_spread(zt: pd.DataFrame, pred: str) -> dict:

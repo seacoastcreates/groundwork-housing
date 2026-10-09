@@ -5,7 +5,11 @@ description = "Features, models, and backtests for ZIP and metro home value fore
 requires-python = ">=3.11"
 # Exact pins: model artifacts are pickled, so training and the API must run identical versions.
 dependencies = ["pandas==3.0.6", "numpy==2.3.4", "pyarrow==21.0.0", "lightgbm==4.6.0",
-                "scikit-learn==1.7.2", "joblib==1.5.2"]
+                "scikit-learn==1.7.2", "joblib==1.5.2", "openpyxl==3.1.5"]
+
+[project.optional-dependencies]
+# Hyperparameter search (ml/tune.py); not needed to train or serve.
+tuning = ["optuna==4.9.0"]
 
 [build-system]
 requires = ["setuptools>=68"]

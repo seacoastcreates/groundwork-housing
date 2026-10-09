@@ -10,6 +10,8 @@ import shutil
 import urllib.request
 from pathlib import Path
 
+from homeprice.data import ZILLOW_EXTRAS
+
 RAW = Path(__file__).resolve().parents[2] / "data" / "raw"
 ZILLOW = "https://files.zillowstatic.com/research/public_csvs"
 TIER = "uc_sfrcondo_tier_0.33_0.67_sm_sa_month"
@@ -23,6 +25,13 @@ SOURCES = {
                                              "redfin_market_tracker/redfin_metro_market_tracker.tsv000.gz",
     "mortgage.csv": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US",
 }
+# Extra series for the feature groups (tiers, rent, Zillow market activity).
+_DIRS = {"Zip_zhvi": "zhvi", "zori": "zori", "invt_fs": "invt_fs", "new_listings": "new_listings",
+         "new_pending": "new_pending", "med_doz_pending": "med_doz_pending",
+         "perc_listings_price_cut": "perc_listings_price_cut", "mean_sale_to_list": "mean_sale_to_list"}
+for _name in ZILLOW_EXTRAS.values():
+    _dir = next(d for k, d in _DIRS.items() if k in _name)
+    SOURCES[_name] = f"{ZILLOW}/{_dir}/{_name}"
 
 
 def fetch(name: str, url: str) -> Path:

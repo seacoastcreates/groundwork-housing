@@ -29,6 +29,7 @@ def main() -> None:
         cur.execute("DELETE FROM forecasts WHERE model_version = %s", (version,))
         copy(cur, "forecasts", fc.assign(model_version=version)[
             ["model_version", "region_id", "change_pct", "low_pct", "high_pct", "trend_pct", "relative_pct"]])
+        cur.execute("ANALYZE forecasts")    # fresh stats, or the planner nested-loops the update below
         cur.execute("""UPDATE forecasts f SET relative_rank_pct = k.p FROM (
                            SELECT f.region_id, 100 * percent_rank() OVER (PARTITION BY r.metro_id ORDER BY f.relative_pct) AS p
                            FROM forecasts f JOIN regions r ON r.id = f.region_id

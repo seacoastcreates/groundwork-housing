@@ -74,7 +74,32 @@ export type ModelInfo = {
     test_years: [number, number];
     interval?: Record<"metro" | "zip", [number, number]>;
     backtest?: Record<"metro" | "zip" | "relative", Record<string, LevelMetrics>>;
+    config?: { trend_groups: string[]; relative_groups: string[]; trend_params: Record<string, number | string>; relative_params: Record<string, number | string> };
+    ablation?: Partial<Record<"trend" | "relative" | "relative_round2", AblationReport>>;
+    tuning?: Partial<Record<"trend" | "relative", TuningReport>>;
   };
+};
+
+export type AblationRun = {
+  groups: string[];
+  mae: number;
+  mae_recent: number;
+  rank_ic: number;
+  top_decile_beat?: number;
+  passes?: boolean;
+  years_better?: number;
+  years_active?: number;
+};
+export type AblationReport = { baseline: AblationRun; variants: Record<string, AblationRun>; adopted: string[] };
+
+type HoldoutScore = { mae: number; rank_ic: number; by_year: Record<string, { mae: number; rank_ic: number }> };
+export type TuningReport = {
+  tune_years: number[];
+  holdout_years: number[];
+  trials: Record<string, number>;
+  best_params: Record<string, number | string>;
+  param_importance: Record<string, number>;
+  holdout: { default: HoldoutScore; tuned: HoldoutScore; adopt: boolean };
 };
 
 async function get<T>(path: string, revalidate = 3600): Promise<T | null> {

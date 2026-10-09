@@ -15,12 +15,12 @@ import numpy as np
 import pandas as pd
 
 from homeprice import backtest
-from homeprice.data import load_mortgage, load_redfin, load_zhvi
-from homeprice.features import (HORIZON, REDFIN_LAG, heat_frame, macro_frame, market_panel,
-                                training_origins, zip_panel)
-from homeprice.models import RelativeModel, TrendModel
+from homeprice.features import HORIZON, REDFIN_LAG
+from homeprice.models import RelativeModel, TrendModel, load_config
+from homeprice.pipeline import build
 
 ARTIFACTS = Path(__file__).resolve().parent / "artifacts"
+REPORTS = Path(__file__).resolve().parent / "reports"
 INTERVAL = (0.10, 0.90)
 
 
@@ -34,15 +34,7 @@ def main() -> None:
     args = ap.parse_args()
     t0 = time.time()
 
-    metros, zips = load_zhvi("Metro"), load_zhvi("Zip")
-    nation = type(metros)(metros.meta[metros.meta.RegionType == "country"].reset_index(drop=True),
-                          metros.logs[(metros.meta.RegionType == "country").values].reset_index(drop=True))
-    macro = macro_frame(nation, load_mortgage())
-    heat = heat_frame(load_redfin())
-    latest = zips.logs.columns[-1]
-    origins = sorted(set(training_origins(zips.logs)) | {latest})
-    mp = market_panel(metros, origins, macro, heat)
-    zp = zip_panel(zips, metros, origins, macro)
+    mp, zp, latest = build()
     print(f"panels: {len(mp):,} market rows, {len(zp):,} ZIP rows; latest month {latest} "
           f"({time.time() - t0:.0f}s)")
 
@@ -51,7 +43,11 @@ def main() -> None:
     out.mkdir(parents=True)
 
     metrics = {"horizon_months": HORIZON, "origin": str(latest), "redfin_lag_months": REDFIN_LAG,
-               "test_years": [min(backtest.TEST_YEARS), max(backtest.TEST_YEARS)]}
+               "test_years": [min(backtest.TEST_YEARS), max(backtest.TEST_YEARS)], "config": load_config()}
+    # Feature and tuning experiments ride along so the Model page can show them.
+    for name in ("ablation", "tuning"):
+        if (REPORTS / f"{name}.json").exists():
+            metrics[name] = json.loads((REPORTS / f"{name}.json").read_text())
     resid = {"metro": (-0.08, 0.08), "zip": (-0.10, 0.10)}
     if not args.skip_backtest:
         res, preds = backtest.run(mp, zp)

@@ -55,3 +55,27 @@ def load_zillow_forecast(level: str, raw: Path = RAW) -> pd.DataFrame:
     long = df.melt(id_vars=["RegionID", "BaseDate"], value_vars=targets,
                    var_name="target", value_name="growth_pct").dropna()
     return long
+
+
+# Extra Zillow series used by the feature groups in features.py, keyed by short name.
+ZILLOW_EXTRAS = {
+    "tier_bottom": "Zip_zhvi_uc_sfrcondo_tier_0.0_0.33_sm_sa_month.csv",
+    "tier_top": "Zip_zhvi_uc_sfrcondo_tier_0.67_1.0_sm_sa_month.csv",
+    "rent_zip": "Zip_zori_uc_sfrcondomfr_sm_month.csv",
+    "rent_metro": "Metro_zori_uc_sfrcondomfr_sm_month.csv",
+    "z_inventory": "Metro_invt_fs_uc_sfrcondo_sm_month.csv",
+    "z_new_listings": "Metro_new_listings_uc_sfrcondo_sm_month.csv",
+    "z_new_pending": "Metro_new_pending_uc_sfrcondo_sm_month.csv",
+    "z_days_pending": "Metro_med_doz_pending_uc_sfrcondo_sm_month.csv",
+    "z_price_cut": "Metro_perc_listings_price_cut_uc_sfrcondo_sm_month.csv",
+    "z_sale_to_list": "Metro_mean_sale_to_list_uc_sfrcondo_sm_month.csv",
+}
+
+
+def load_wide(name: str, raw: Path = RAW) -> pd.DataFrame:
+    """A Zillow wide file as raw values: index RegionID, columns monthly Periods."""
+    df = pd.read_csv(raw / ZILLOW_EXTRAS[name])
+    dates = [c for c in df.columns if c[:2] in ("19", "20")]
+    out = df.set_index("RegionID")[dates].astype(float)
+    out.columns = pd.PeriodIndex(pd.to_datetime(dates), freq="M")
+    return out
