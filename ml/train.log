@@ -1,0 +1,171 @@
+panels: 69,050 market rows, 1,860,536 ZIP rows; latest month 2026-08 (10s)
+  backtest 2017: metro MAE 2.49, zip MAE 2.84
+  backtest 2018: metro MAE 2.39, zip MAE 2.90
+  backtest 2019: metro MAE 1.96, zip MAE 2.53
+  backtest 2020: metro MAE 7.08, zip MAE 7.85
+  backtest 2021: metro MAE 4.27, zip MAE 4.45
+  backtest 2022: metro MAE 4.83, zip MAE 6.44
+  backtest 2023: metro MAE 2.53, zip MAE 3.32
+  backtest 2024: metro MAE 3.09, zip MAE 3.88
+  backtest 2025: metro MAE 2.37, zip MAE 3.54
+{
+ "metro": {
+  "damped": {
+   "mae": 4.238,
+   "bias": -2.134,
+   "mae_recent": 2.704,
+   "rank_ic": 0.399,
+   "top_decile_beat": null,
+   "decile_spread": null,
+   "by_year": {
+    "2017": 3.351,
+    "2018": 2.859,
+    "2019": 3.525,
+    "2020": 9.366,
+    "2021": 5.517,
+    "2022": 5.412,
+    "2023": 3.176,
+    "2024": 2.48,
+    "2025": 2.456
+   }
+  },
+  "trend": {
+   "mae": 3.445,
+   "bias": -0.451,
+   "mae_recent": 2.662,
+   "rank_ic": 0.481,
+   "top_decile_beat": null,
+   "decile_spread": null,
+   "by_year": {
+    "2017": 2.486,
+    "2018": 2.394,
+    "2019": 1.956,
+    "2020": 7.082,
+    "2021": 4.272,
+    "2022": 4.831,
+    "2023": 2.526,
+    "2024": 3.095,
+    "2025": 2.365
+   }
+  },
+  "trend_core": {
+   "mae": 4.024,
+   "bias": -1.605,
+   "mae_recent": 3.931,
+   "rank_ic": 0.483,
+   "top_decile_beat": null,
+   "decile_spread": null,
+   "by_year": {
+    "2017": 2.819,
+    "2018": 2.404,
+    "2019": 2.032,
+    "2020": 7.001,
+    "2021": 3.742,
+    "2022": 6.422,
+    "2023": 4.946,
+    "2024": 3.08,
+    "2025": 3.767
+   }
+  }
+ },
+ "relative": {
+  "rel": {
+   "mae": 2.47,
+   "bias": 0.214,
+   "mae_recent": 2.455,
+   "rank_ic": 0.241,
+   "top_decile_beat": 0.697,
+   "decile_spread": 3.889,
+   "by_year": {
+    "2017": 2.034,
+    "2018": 2.106,
+    "2019": 1.972,
+    "2020": 3.034,
+    "2021": 2.964,
+    "2022": 2.756,
+    "2023": 2.371,
+    "2024": 2.33,
+    "2025": 2.666
+   }
+  },
+  "rel_damped": {
+   "mae": 2.683,
+   "bias": -0.109,
+   "mae_recent": 2.648,
+   "rank_ic": 0.116,
+   "top_decile_beat": 0.629,
+   "decile_spread": 2.468,
+   "by_year": {
+    "2017": 2.263,
+    "2018": 2.358,
+    "2019": 2.256,
+    "2020": 3.197,
+    "2021": 3.115,
+    "2022": 3.012,
+    "2023": 2.589,
+    "2024": 2.559,
+    "2025": 2.796
+   }
+  },
+  "zero": {
+   "mae": 2.564,
+   "bias": -0.153,
+   "mae_recent": 2.543,
+   "rank_ic": null,
+   "top_decile_beat": null,
+   "decile_spread": null,
+   "by_year": {
+    "2017": 2.354,
+    "2018": 2.322,
+    "2019": 2.186,
+    "2020": 3.114,
+    "2021": 2.895,
+    "2022": 2.583,
+    "2023": 2.426,
+    "2024": 2.375,
+    "2025": 2.827
+   }
+  }
+ },
+ "zip": {
+  "damped": {
+   "mae": 4.915,
+   "bias": -2.158,
+   "mae_recent": 3.644,
+   "rank_ic": 0.3,
+   "top_decile_beat": null,
+   "decile_spread": null,
+   "by_year": {
+    "2017": 3.762,
+    "2018": 3.184,
+    "2019": 3.998,
+    "2020": 10.583,
+    "2021": 5.62,
+    "2022": 6.157,
+    "2023": 4.158,
+    "2024": 3.33,
+    "2025": 3.445
+   }
+  },
+  "two_part": {
+   "mae": 4.196,
+   "bias": -0.186,
+   "mae_recent": 3.581,
+   "rank_ic": 0.383,
+   "top_decile_beat": null,
+   "decile_spread": null,
+   "by_year": {
+    "2017": 2.844,
+    "2018": 2.9,
+    "2019": 2.529,
+    "2020": 7.849,
+    "2021": 4.455,
+    "2022": 6.443,
+    "2023": 3.321,
+    "2024": 3.882,
+    "2025": 3.541
+   }
+  }
+ }
+}
+wrote 27,161 forecasts to /Users/kirby/Projects/housing-tracker/ml/artifacts/v20261009-1054 (273s)

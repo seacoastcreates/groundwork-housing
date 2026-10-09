@@ -1,0 +1,15 @@
+[project]
+name = "homeprice"
+version = "0.1.0"
+description = "Features, models, and backtests for ZIP and metro home value forecasting"
+requires-python = ">=3.11"
+# Exact pins: model artifacts are pickled, so training and the API must run identical versions.
+dependencies = ["pandas==3.0.6", "numpy==2.3.4", "pyarrow==21.0.0", "lightgbm==4.6.0",
+                "scikit-learn==1.7.2", "joblib==1.5.2"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["homeprice"]
