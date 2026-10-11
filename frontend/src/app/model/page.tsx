@@ -90,7 +90,9 @@ export default async function ModelPage() {
   if (!info?.metrics.backtest) {
     return <p className="text-ink-2">No backtest has been published yet.</p>;
   }
-  const { backtest: bt, test_years, redfin_lag_months, interval, ablation, tuning, national } = info.metrics;
+  const { backtest: bt, test_years, redfin_lag_months, interval, ablation, tuning, national, config } = info.metrics;
+  const natCfg = config?.national;
+  const rural = (bt as Record<string, Record<string, LevelMetrics>>).zip_rural;
   const sortByMae = (o: Record<string, LevelMetrics>) => Object.entries(o).sort((a, b) => a[1].mae - b[1].mae);
   const rel = bt.relative.rel;
 
@@ -214,15 +216,32 @@ export default async function ModelPage() {
         <>
           <h2 className="display mt-12 text-2xl font-semibold">The national forecast</h2>
           <p className="mb-4 mt-3 text-ink-2">
-            Redfin has no national series, so the nation is forecast without market-activity data, the weakest setup.
+            Redfin has no national series, so the nation was forecast without market-activity data, the weakest setup.
             The alternative is a weighted mean of the metro forecasts, which do use Redfin.{" "}
             {national.adopt
-              ? "It passed the bar, so the national figure is now the weighted mean of the metro forecasts."
-              : national.backtest.aggregate.mae < national.backtest.own_row.mae
-                ? "It lowered average error but didn't win often enough to pass the bar, so the national figure still comes from the national series."
-                : "It didn't beat the current approach, so the national figure still comes from the national series."}
+              ? "It passed the bar, so the national figure is the weighted mean of the metro forecasts."
+              : natCfg?.override
+                ? ""
+                : national.backtest.aggregate.mae < national.backtest.own_row.mae
+                  ? "It lowered average error but didn't win often enough to pass the bar, so the national figure still comes from the national series."
+                  : "It didn't beat the current approach, so the national figure still comes from the national series."}
           </p>
-          <NationalCard report={national} />
+          {natCfg?.override && !national.adopt && (
+            <aside className="mb-4 rounded-r-lg border-l-4 border-brick bg-surface-2 px-4 py-3 text-sm text-ink-2">
+              <strong className="text-ink">An override of the pre-set rule.</strong> The aggregate beat the national
+              series in {national.years_better} of 9 years, one short of the bar, and was adopted anyway. The reasons:
+              with four overlapping forecasts a year, a 5–4 split can&apos;t separate the two, so the size of the misses
+              matters more. The aggregate&apos;s wins were larger than its losses (mean error{" "}
+              {national.backtest.aggregate.mae.toFixed(2)} vs {national.backtest.own_row.mae.toFixed(2)}, and lower
+              since 2023). The setup it replaces is the same one that does much worse on metros. And a national
+              forecast built from the metros can&apos;t contradict them, which the old one did.
+            </aside>
+          )}
+          <NationalCard report={national} override={natCfg?.override}
+                        rural={rural ? { own: rural.two_part_own_row.mae, agg: rural.two_part_aggregate.mae,
+                                         years: Object.keys(rural.two_part_own_row.by_year).filter((y) =>
+                                           rural.two_part_aggregate.by_year[y] < rural.two_part_own_row.by_year[y]).length,
+                                         total: Object.keys(rural.two_part_own_row.by_year).length } : undefined} />
         </>
       )}
 

@@ -17,6 +17,7 @@ import pandas as pd
 from homeprice import backtest
 from homeprice.features import HORIZON, REDFIN_LAG
 from homeprice.models import RelativeModel, TrendModel, load_config
+from homeprice.national import with_national
 from homeprice.pipeline import build
 
 ARTIFACTS = Path(__file__).resolve().parent / "artifacts"
@@ -64,9 +65,14 @@ def main() -> None:
     trend = TrendModel().fit(mp)
     relative = RelativeModel().fit(zp)
     mnow = mp[mp.origin == latest].copy()
-    mnow["trend"] = trend.predict(mnow)
+    own = trend.predict(mnow)
+    nat_cfg = load_config().get("national", {"method": "own_row", "weighting": "labor_force", "rural_parent": "own_row"})
+    agg = with_national(mnow, own, "aggregate", nat_cfg["weighting"])
+    mnow["trend"] = agg if nat_cfg["method"] == "aggregate" else own
     znow = zp[zp.origin == latest].copy()
-    parent_trend = mnow.set_index("region_id").trend
+    # Metro parents are unaffected; rural ZIPs (parent = nation) follow config.national.rural_parent.
+    rural_vals = agg if nat_cfg.get("rural_parent") == "aggregate" else own
+    parent_trend = pd.Series(np.where(mnow.kind == "country", rural_vals, mnow.trend), index=mnow.region_id)
     znow["trend"] = parent_trend.reindex(znow.parent_id).to_numpy()
     znow["relative"] = relative.predict(znow)
     znow = znow.dropna(subset=["trend"])

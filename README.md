@@ -80,7 +80,7 @@ percentage points of log change.
 | **Metro**: trend model with Redfin | **3.45** | **2.66** | −0.45 | 0.48 |
 | Metro: trend model, prices and rates only | 4.02 | 3.93 | −1.61 | 0.48 |
 | Metro: damped momentum (0.6 × last 12 months) | 4.24 | 2.70 | −2.13 | 0.40 |
-| **ZIP**: two-part model | **4.16** | **3.53** | −0.23 | 0.39 |
+| **ZIP**: two-part model | **4.11** | **3.47** | −0.03 | 0.41 |
 | ZIP: damped momentum | 4.92 | 3.64 | −2.16 | 0.30 |
 
 Ranking ZIPs within their metro (the site's headline):
@@ -93,6 +93,8 @@ Ranking ZIPs within their metro (the site's headline):
 - Redfin heat. It lowers metro error by 14% overall and by 32% since 2023.
 - The two-part split.
 - Affordability and rent features in the relative model (see the feature experiments below).
+- A national forecast built as a labor-force-weighted mean of the metro forecasts (a disclosed override; see
+  the national forecast section below).
 
 ### Feature experiments (`ml/ablation.py`, `ml/reports/ablation.json`)
 Each group was added on its own to the baseline and run through the walk-forward backtest. The rule was
@@ -154,8 +156,20 @@ of the metro forecasts:
   actual metro changes. Metro labor force wins with a 0.34-point error, against 1.01 for labor force ×
   home value and 1.80 for equal weights.
 - **Backtest, 2017–2025:** the aggregate's national MAE is **2.73** vs **3.18** for the national row and
-  3.69 for damped momentum. But it's better in only **5 of 9** years, and the rule needed 6, so it isn't
-  adopted. Each year has only 4 quarterly forecasts, so this is a small-sample call.
+  3.69 for damped momentum. It's better in only **5 of 9** years, one short of the rule's 6.
+- **Adopted anyway, as a disclosed override** (`config.json` → `national.override`, explained on the Model
+  page). The reasons:
+  - With 4 overlapping forecasts a year, a 5–4 split can't separate the two approaches. The aggregate's
+    wins average about 1.7 points and its losses about 0.9.
+  - It's also better since 2023 (1.97 vs 2.84).
+  - The national row uses the same no-market-data setup that is much worse on metros.
+  - A national figure built from the metros can't contradict them. The old one said +0.1% while most
+    metros were higher.
+- **Rural ZIPs**, whose parent is the nation, were checked before they switched (bar: error no worse).
+  Their error is **4.91 vs 5.19**, better in 6 of 9 years, so they use the aggregate too. All-ZIP
+  two-part MAE drops from 4.16 to **4.11** (from 3.53 to 3.47 since 2023).
+- The live national forecast is now +2.4% (80% range −2.4% to +9.0%), up from +0.1%. The median metro is
+  +3.0%, and Zillow's own national forecast is +1.4%.
 
 ### Hyperparameter tuning (`ml/tune.py`, `ml/reports/tuning.json`)
 Optuna (TPE sampler, median pruning, study in `ml/reports/optuna.db`) searches only on early test years:
@@ -172,8 +186,8 @@ The trend search found a configuration (L1 loss, 948 small trees, heavy feature 
 better on the years it was tuned on and 31% worse on 2022 onward. The holdout split exists to catch exactly
 that.
 
-**Still weak:** the two-part ZIP model loses narrowly to damped momentum in 2022, 2024 and 2025. The
-national forecast comes from the core model, which has no Redfin data, and that model is the weakest piece.
+**Still weak:** the two-part ZIP model loses to damped momentum in 2024 (3.91 vs 3.33). National forecasts
+rest on a small sample, with 4 forecasts per test year.
 
 ## Run locally
 ```bash
@@ -191,8 +205,6 @@ The API docs are at http://localhost:8000/api/v1/docs.
 ## Next steps
 - Deploy on AWS by reusing the wine tracker's CDK pattern (one EC2 instance, CloudFront, a monthly refresh
   run through EventBridge and SSM).
-- National trend: the metro aggregate lowered error but missed the consistency bar (5 of 9 years); next,
-  try a national market-heat series built from the Redfin metros.
 - Re-check zheat once 2026 outcomes arrive (it now needs 3 years of history and is active from 2024).
 - Use real-time vintages (ALFRED) for revised series such as LAUS and payrolls.
 - Add a scorecard comparing our archived forecasts with Zillow's as outcomes arrive.

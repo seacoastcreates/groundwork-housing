@@ -9,5 +9,12 @@
     "rent"
   ],
   "trend_params": {},
-  "relative_params": {}
+  "relative_params": {},
+  "national": {
+    "method": "aggregate",
+    "weighting": "labor_force",
+    "rural_parent": "aggregate",
+    "override": true,
+    "override_reason": "Adopted 2026-10-11 although it beat the national series in only 5 of 9 years (rule: 6). Lower mean error (2.73 vs 3.18) and 2023+ error, larger wins than losses, a structurally weaker alternative (no market-activity data), and coherence with the metro forecasts. Rural ZIPs use it only if their backtest error isn't worse."
+  }
 }

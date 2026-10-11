@@ -74,7 +74,13 @@ export type ModelInfo = {
     test_years: [number, number];
     interval?: Record<"metro" | "zip", [number, number]>;
     backtest?: Record<"metro" | "zip" | "relative", Record<string, LevelMetrics>>;
-    config?: { trend_groups: string[]; relative_groups: string[]; trend_params: Record<string, number | string>; relative_params: Record<string, number | string> };
+    config?: {
+      trend_groups: string[];
+      relative_groups: string[];
+      trend_params: Record<string, number | string>;
+      relative_params: Record<string, number | string>;
+      national?: { method: "aggregate" | "own_row"; weighting: string; rural_parent: string; override?: boolean };
+    };
     ablation?: Partial<Record<"trend" | "relative" | "relative_round2" | "trend_retest" | "relative_retest", AblationReport>>;
     national?: NationalReport;
     tuning?: Partial<Record<"trend" | "relative", TuningReport>>;

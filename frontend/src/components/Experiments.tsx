@@ -213,15 +213,23 @@ const WEIGHT_LABELS: Record<string, string> = {
   home_value: "Labor force × home value",
 };
 
-export function NationalCard({ report }: { report: NationalReport }) {
+export function NationalCard({ report, override, rural }: {
+  report: NationalReport;
+  override?: boolean;
+  rural?: { own: number; agg: number; years: number; total: number };
+}) {
   const models = (["own_row", "aggregate", "damped"] as const).filter((m) => report.backtest[m]);
   const years = Object.keys(report.backtest.own_row.by_year);
   return (
     <div className="card p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="font-semibold">National forecast: aggregate the metros?</h3>
-        <span className={report.adopt ? "text-sm font-semibold text-up" : "text-sm text-muted"}>
-          {report.adopt ? "Aggregate adopted" : `Not adopted: better in ${report.years_better} of ${years.length} years`}
+        <span className={report.adopt || override ? "text-sm font-semibold text-up" : "text-sm text-muted"}>
+          {report.adopt
+            ? "Aggregate adopted"
+            : override
+              ? `Adopted by override (better in ${report.years_better} of ${years.length} years)`
+              : `Not adopted: better in ${report.years_better} of ${years.length} years`}
         </span>
       </div>
       <p className="mt-1 text-sm text-ink-2">
@@ -255,6 +263,13 @@ export function NationalCard({ report }: { report: NationalReport }) {
           </tbody>
         </table>
       </div>
+      {rural && (
+        <p className="mt-3 text-sm text-ink-2">
+          Rural ZIPs (outside any tracked metro) take the national trend as their parent. With the aggregate as parent
+          their forecast error is {rural.agg.toFixed(2)} vs {rural.own.toFixed(2)} pts, better in {rural.years} of{" "}
+          {rural.total} years, so they use it too.
+        </p>
+      )}
     </div>
   );
 }

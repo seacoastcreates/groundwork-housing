@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 
 from homeprice.features import HORIZON
-from homeprice.models import RelativeModel, TrendModel, damped_momentum
+from homeprice.models import RelativeModel, TrendModel, damped_momentum, load_config
+from homeprice.national import with_national
 
 TEST_YEARS = range(2017, 2026)
 MIN_GROUP = 10     # ZIPs per (origin, parent) group for within-market ranking
@@ -38,9 +39,13 @@ def _folds(markets: pd.DataFrame, zips: pd.DataFrame, years=TEST_YEARS):
 def run(markets: pd.DataFrame, zips: pd.DataFrame, log=print) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Returns (per-year metrics, out-of-sample predictions for every test row)."""
     rows, preds = [], []
+    nat_cfg = load_config().get("national", {"method": "own_row", "weighting": "labor_force", "rural_parent": "own_row"})
     for yr, mtr, mt, ztr, zt in _folds(markets, zips):
         mt = mt.copy()
-        mt["pred_trend"] = TrendModel().fit(mtr).predict(mt)
+        own = TrendModel().fit(mtr).predict(mt)
+        mt["pred_trend_own"] = own
+        mt["pred_trend_agg"] = with_national(mt, own, "aggregate", nat_cfg["weighting"])
+        mt["pred_trend"] = mt.pred_trend_agg if nat_cfg["method"] == "aggregate" else own
         mt["pred_trend_core"] = TrendModel(groups=["base"]).fit(mtr).predict(mt)
         mt["pred_damped"] = damped_momentum(mt)
         metros = mt[mt.kind == "msa"]
@@ -49,9 +54,19 @@ def run(markets: pd.DataFrame, zips: pd.DataFrame, log=print) -> tuple[pd.DataFr
                              **_errors(metros[name].to_numpy(), metros.y.to_numpy()),
                              rank_ic=_rank_ic(metros, name, "y", ["origin"])))
 
+        nation = mt[mt.kind == "country"]
+        for name in ("pred_trend_own", "pred_trend_agg", "pred_damped"):
+            rows.append(dict(year=yr, level="nation", model={"pred_trend_own": "own_row", "pred_trend_agg": "aggregate",
+                                                             "pred_damped": "damped"}[name], n=len(nation),
+                             **_errors(nation[name].to_numpy(), nation.y.to_numpy()), rank_ic=np.nan))
+
         zt = zt.copy()
-        trend = mt.set_index(["region_id", "origin"]).pred_trend
-        zt["pred_parent"] = trend.reindex(pd.MultiIndex.from_arrays([zt.parent_id, zt.origin])).to_numpy()
+        key = pd.MultiIndex.from_arrays([zt.parent_id, zt.origin])
+        idx = mt.set_index(["region_id", "origin"])
+        for name in ("pred_trend_own", "pred_trend_agg"):
+            zt[name.replace("pred_trend", "parent")] = idx[name].reindex(key).to_numpy()
+        # Metro parents are the same either way; rural ZIPs (parent = nation) follow config.national.rural_parent.
+        zt["pred_parent"] = zt.parent_agg if nat_cfg.get("rural_parent") == "aggregate" else zt.parent_own
         zt = zt.dropna(subset=["pred_parent"])
         zt["pred_rel"] = RelativeModel().fit(ztr).predict(zt)
         zt["pred_rel_damped"] = damped_momentum(zt, "rel_r12")
@@ -61,6 +76,10 @@ def run(markets: pd.DataFrame, zips: pd.DataFrame, log=print) -> tuple[pd.DataFr
             rows.append(dict(year=yr, level="zip", model=name[5:], n=len(zt),
                              **_errors(zt[name].to_numpy(), zt.y.to_numpy()),
                              rank_ic=_rank_ic(zt, name, "y", ["origin"])))
+        rural = zt[zt.parent_id.isin(nation.region_id)]
+        for name, parent in (("two_part_own_row", rural.parent_own), ("two_part_aggregate", rural.parent_agg)):
+            rows.append(dict(year=yr, level="zip_rural", model=name, n=len(rural),
+                             **_errors((parent + rural.pred_rel).to_numpy(), rural.y.to_numpy()), rank_ic=np.nan))
         # Within-market ranking: the headline. Zero relative is "every ZIP moves with its metro".
         for name in ("pred_rel", "pred_rel_damped"):
             rows.append(dict(year=yr, level="relative", model=name[5:], n=len(zt),
