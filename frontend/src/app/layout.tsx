@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 const display = Newsreader({ subsets: ["latin"], variable: "--font-display-face", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "Hearth Index", template: "%s · Hearth Index" },
+  title: { default: "Groundwork", template: "%s · Groundwork" },
   description: "US home values by metro and ZIP, with a backtested 12-month forecast",
 };
 
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
             <Link href="/" className="flex items-center gap-2.5">
               <Logo />
-              <span className="display text-xl font-semibold">Hearth Index</span>
+              <span className="display text-xl font-semibold">Groundwork</span>
             </Link>
             <NavLinks />
           </div>
@@ -41,7 +41,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               Home values: Zillow Home Value Index (Zillow Research). Market activity: Redfin Data Center. Mortgage rates:
               Freddie Mac via FRED. Forecasts are this site&apos;s own and are not financial advice.
             </span>
-            <span className="whitespace-nowrap">Next.js · FastAPI · PostgreSQL · LightGBM</span>
+            <span className="whitespace-nowrap">
+              Next.js · FastAPI · PostgreSQL · LightGBM ·{" "}
+              <a className="underline hover:text-ink" href="https://github.com/seacoastcreates/groundwork-housing">
+                Source on GitHub
+              </a>
+            </span>
           </div>
         </footer>
       </body>
