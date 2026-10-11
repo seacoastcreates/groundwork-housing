@@ -18,6 +18,8 @@ CONFIG = Path(__file__).with_name("config.json")
 MAX_TRAIN_ROWS = 1_200_000
 SPARSE_START_YEAR = 2013     # first year with lagged Redfin data for most metros
 MIN_SPARSE_ROWS = 2_000      # below this the sparse booster isn't trained and the core one is used
+MIN_SPARSE_YEARS = 3         # nor until its data spans this many years of training origins: Zillow's market
+                             # data (from 2018) learned only the boom on ~2 years and blew up in 2022
 
 DEFAULT_PARAMS = dict(n_estimators=400, learning_rate=0.03, num_leaves=63, min_child_samples=200,
                       subsample=0.8, subsample_freq=1, colsample_bytree=0.8)
@@ -56,6 +58,7 @@ class TrendModel:
     groups: list[str] | None = None
     params: dict | None = None
     max_rows: int = MAX_TRAIN_ROWS
+    min_sparse_years: float = MIN_SPARSE_YEARS
     boosters: dict = field(default_factory=dict, repr=False)
 
     def __post_init__(self):
@@ -81,7 +84,9 @@ class TrendModel:
             rows = p
             if sub:
                 rows = p[self._has(p, sub) & (p.origin.dt.year >= SPARSE_START_YEAR).to_numpy()]
-                if rows.y.notna().sum() < MIN_SPARSE_ROWS:
+                labeled = rows[rows.y.notna()]
+                years = (labeled.origin.max() - labeled.origin.min()).n / 12 if len(labeled) else 0
+                if len(labeled) < MIN_SPARSE_ROWS or years < self.min_sparse_years:
                     continue
             self.boosters[sub] = _fit(rows, self.feats[sub], "y", self.params, self.max_rows)
         return self

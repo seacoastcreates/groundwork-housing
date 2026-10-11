@@ -45,7 +45,7 @@ def main() -> None:
     metrics = {"horizon_months": HORIZON, "origin": str(latest), "redfin_lag_months": REDFIN_LAG,
                "test_years": [min(backtest.TEST_YEARS), max(backtest.TEST_YEARS)], "config": load_config()}
     # Feature and tuning experiments ride along so the Model page can show them.
-    for name in ("ablation", "tuning"):
+    for name in ("ablation", "tuning", "national"):
         if (REPORTS / f"{name}.json").exists():
             metrics[name] = json.loads((REPORTS / f"{name}.json").read_text())
     resid = {"metro": (-0.08, 0.08), "zip": (-0.10, 0.10)}

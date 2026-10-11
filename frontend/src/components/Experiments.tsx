@@ -1,4 +1,4 @@
-import type { AblationReport, AblationRun, TuningReport } from "@/lib/api";
+import type { AblationReport, AblationRun, NationalReport, TuningReport } from "@/lib/api";
 
 const GROUP_LABELS: Record<string, string> = {
   base: "Price history + rates",
@@ -9,6 +9,8 @@ const GROUP_LABELS: Record<string, string> = {
   zheat: "Zillow market activity (current)",
   tiers: "Top vs. bottom tier spread",
   unemp: "Local unemployment & job growth",
+  unemp_clip: "Unemployment, clipped to pre-2020 ranges",
+  unemp_mask: "Unemployment, pandemic months masked",
   macro: "National macro (jobs, inflation, yields, starts)",
 };
 
@@ -195,6 +197,63 @@ export function TuningCard({ report, kind }: { report: TuningReport; kind: "tren
             </ul>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+const NATIONAL_LABELS: Record<string, string> = {
+  aggregate: "Weighted mean of metro forecasts",
+  own_row: "Trend model on the national series",
+  damped: "Damped momentum",
+};
+const WEIGHT_LABELS: Record<string, string> = {
+  equal: "Equal weights",
+  labor_force: "Metro labor force",
+  home_value: "Labor force × home value",
+};
+
+export function NationalCard({ report }: { report: NationalReport }) {
+  const models = (["own_row", "aggregate", "damped"] as const).filter((m) => report.backtest[m]);
+  const years = Object.keys(report.backtest.own_row.by_year);
+  return (
+    <div className="card p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="font-semibold">National forecast: aggregate the metros?</h3>
+        <span className={report.adopt ? "text-sm font-semibold text-up" : "text-sm text-muted"}>
+          {report.adopt ? "Aggregate adopted" : `Not adopted: better in ${report.years_better} of ${years.length} years`}
+        </span>
+      </div>
+      <p className="mt-1 text-sm text-ink-2">
+        Weights were chosen on 2005–2016 by how well they rebuild the actual national change from actual metro changes:{" "}
+        {Object.entries(report.fidelity_2005_2016).map(([k, v], i) => (
+          <span key={k}>{i ? ", " : ""}{WEIGHT_LABELS[k] ?? k} {v.mae.toFixed(2)}</span>
+        ))}{" "}
+        pts error. The rule (lower error overall and in 6 of 9 years) was set beforehand; with four forecasts a year,
+        each year is a small sample.
+      </p>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr>
+              <th className="th">National MAE</th>
+              {years.map((y) => <th key={y} className="th text-right">{y}</th>)}
+              <th className="th text-right">Mean</th>
+            </tr>
+          </thead>
+          <tbody>
+            {models.map((m) => {
+              const r = report.backtest[m];
+              return (
+                <tr key={m}>
+                  <td className="td">{NATIONAL_LABELS[m]}</td>
+                  {years.map((y) => <td key={y} className="td text-right tabular">{r.by_year[y].toFixed(2)}</td>)}
+                  <td className="td text-right tabular font-semibold">{r.mae.toFixed(2)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

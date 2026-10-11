@@ -135,6 +135,28 @@ National macro has only about 80 independent time points to learn from, and it o
   ablation's MAE averages had silently skipped those years. The rows are now dropped from scoring, and both
   relative rounds were re-run. The decisions didn't change.
 
+**Round 3, re-tests with fixes** (2026-10-11, against the adopted models). All rejected:
+- **zheat**, with sparse boosters now needing 3 years of training history (`MIN_SPARSE_YEARS`): the 2022
+  blowup is gone, and 2024 improves 3.09 → 2.39. But it's active only in 2024–2025 and is marginally worse
+  in 2025 (2.39 vs 2.37), so it wins 1 of 2. Promising; re-check when 2026 outcomes arrive.
+- **unemp, clipped** to 2005–2019 1st/99th percentiles: worse (MAE 3.665, 4/9). The pandemic damage is
+  about direction, not magnitude.
+- **unemp, masked** for April 2020–September 2021 (a hindsight choice of window): MAE 3.427 vs 3.445, but
+  better in only 5 of 9 years. 2022 is still worse.
+- **Relative model:** clipped 4/9, masked 5/9.
+
+Testing two unemployment variants raises the chance of a lucky pass. Neither passed anyway.
+
+### National forecast (`ml/national_experiment.py`, `ml/reports/national.json`)
+Redfin has no national series, so the nation gets the core booster. The alternative is a weighted mean
+of the metro forecasts:
+- **Weights:** chosen on 2005–2016 by how well they rebuild the actual national 12-month change from
+  actual metro changes. Metro labor force wins with a 0.34-point error, against 1.01 for labor force ×
+  home value and 1.80 for equal weights.
+- **Backtest, 2017–2025:** the aggregate's national MAE is **2.73** vs **3.18** for the national row and
+  3.69 for damped momentum. But it's better in only **5 of 9** years, and the rule needed 6, so it isn't
+  adopted. Each year has only 4 quarterly forecasts, so this is a small-sample call.
+
 ### Hyperparameter tuning (`ml/tune.py`, `ml/reports/tuning.json`)
 Optuna (TPE sampler, median pruning, study in `ml/reports/optuna.db`) searches only on early test years:
 2017–2021 for trend and 2017/2019/2021 for relative, which uses a 300k-row subsample. The best parameters
@@ -169,9 +191,9 @@ The API docs are at http://localhost:8000/api/v1/docs.
 ## Next steps
 - Deploy on AWS by reusing the wine tracker's CDK pattern (one EC2 instance, CloudFront, a monthly refresh
   run through EventBridge and SSM).
-- Improve the national trend: aggregate the metro forecasts, or find a national market-heat series.
-- Revisit Zillow market data (zheat) as it gains history, perhaps by training its booster on a fixed minimum
-  number of years, and test unemployment with the 2020–2021 period down-weighted.
+- National trend: the metro aggregate lowered error but missed the consistency bar (5 of 9 years); next,
+  try a national market-heat series built from the Redfin metros.
+- Re-check zheat once 2026 outcomes arrive (it now needs 3 years of history and is active from 2024).
 - Use real-time vintages (ALFRED) for revised series such as LAUS and payrolls.
 - Add a scorecard comparing our archived forecasts with Zillow's as outcomes arrive.
 - Add rent (Zillow ZORI) and county-level series.

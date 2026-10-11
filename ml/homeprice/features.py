@@ -34,6 +34,12 @@ HEAT = ["months_of_supply", "median_dom", "sale_to_list", "price_drops",
 PARENT = ["parent_r3", "parent_r12", "rel_r3", "rel_r12", "rel_r36", "rel_level"]
 SHAPE = ["vol12", "vol36", "dd60", "trend_dev"]
 UNEMP = ["ur12", "ur_yoy", "ur_yoy_chg3", "emp_yoy"]
+# Re-test variants for the pandemic distortion. Clip bounds are the 1st/99th percentiles of 2005-2019
+# metro (and ZIP-vs-metro) values, so they use no pandemic-era data. The mask treats readings from the
+# pandemic shock as missing; choosing that window uses hindsight and is disclosed as such.
+UNEMP_CLIP = {"ur_yoy": (-0.027, 0.049), "ur_yoy_chg3": (-0.021, 0.017), "emp_yoy": (-0.106, 0.087),
+              "cty_ur_yoy_rel": (-0.013, 0.013), "cty_emp_yoy_rel": (-0.073, 0.050)}
+PANDEMIC = (pd.Period("2020-04", "M"), pd.Period("2021-09", "M"))
 MACRO_X = ["m_unrate", "m_unrate_chg12", "m_payroll_yoy", "m_cpi_yoy", "m_real10", "m_curve", "m_mort_spread",
            "m_starts_yoy", "m_permits_yoy", "m_new_supply", "m_sentiment", "m_sentiment_chg12"]
 ZHEAT = ["z_inventory_yoy", "z_new_listings_yoy", "z_new_pending_yoy", "z_days_pending",
@@ -47,6 +53,8 @@ TREND_GROUPS = {
     "rent": ["ptr", "rent_r12", "ptr_chg12"],
     "zheat": ZHEAT,                                 # Zillow market activity, current
     "unemp": UNEMP,                                 # metro unemployment and job growth (BLS LAUS)
+    "unemp_clip": ["ur12", "ur_yoy_c", "ur_yoy_chg3_c", "emp_yoy_c"],
+    "unemp_mask": ["ur12", "ur_yoy_m", "ur_yoy_chg3_m", "emp_yoy_m"],
     "macro": MACRO_X,                               # national macro (FRED)
 }
 RELATIVE_GROUPS = {
@@ -56,6 +64,8 @@ RELATIVE_GROUPS = {
     "tiers": ["tier_spread", "tier_spread_chg12", "bot_rel_r12", "top_rel_r12"],
     "rent": ["ptr", "rel_ptr", "rel_rent_r12"],
     "unemp": ["cty_ur_rel", "cty_ur_yoy_rel", "cty_emp_yoy_rel"],
+    "unemp_clip": ["cty_ur_rel", "cty_ur_yoy_rel_c", "cty_emp_yoy_rel_c"],
+    "unemp_mask": ["cty_ur_rel", "cty_ur_yoy_rel_m", "cty_emp_yoy_rel_m"],
     "macro": MACRO_X,
 }
 # Groups whose data only exists for part of history or part of the regions, with the column that marks
@@ -127,7 +137,17 @@ def _labor(une: pd.DataFrame, lf: pd.DataFrame) -> dict[str, pd.DataFrame]:
     yoy = rate3 - rate3.shift(12, axis=1)
     emp3 = np.log(l3 - u3)
     return {"ur12": roll(une, 12) / roll(lf, 12), "ur_yoy": yoy, "ur_yoy_chg3": yoy - yoy.shift(3, axis=1),
-            "emp_yoy": emp3 - emp3.shift(12, axis=1)}
+            "emp_yoy": emp3 - emp3.shift(12, axis=1), "lf12": roll(lf, 12) / 12}
+
+
+def _unemp_variants(p: pd.DataFrame) -> pd.DataFrame:
+    """Clipped (_c) and pandemic-masked (_m) copies of the unemployment change features."""
+    shock = ((p.origin >= PANDEMIC[0]) & (p.origin <= PANDEMIC[1])).to_numpy()
+    for col, (lo, hi) in UNEMP_CLIP.items():
+        if col in p:
+            p[f"{col}_c"] = p[col].clip(lo, hi)
+            p[f"{col}_m"] = p[col].mask(shock)
+    return p
 
 
 def _stack(frames: dict[str, pd.DataFrame], origins) -> pd.DataFrame:
@@ -232,7 +252,7 @@ def market_panel(s: Series, origins, macro: pd.DataFrame, heat: pd.DataFrame | N
     for c in HEAT:
         if c not in p:
             p[c] = np.nan
-    return p.dropna(subset=["r12"])
+    return _unemp_variants(p.dropna(subset=["r12"]))
 
 
 def _short_metro(name: str) -> str:
@@ -292,4 +312,4 @@ def zip_panel(zips: Series, markets: Series, origins, macro: pd.DataFrame,
     p["region_id"] = ids[p.row]
     p["parent_id"] = parents[p.row]
     p = _add_common(p.join(macro, on="origin"))
-    return p.dropna(subset=["r12", "parent_r12"])
+    return _unemp_variants(p.dropna(subset=["r12", "parent_r12"]))

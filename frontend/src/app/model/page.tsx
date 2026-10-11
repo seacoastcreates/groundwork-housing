@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { api, monthLabel, type LevelMetrics } from "@/lib/api";
 import { StatTile } from "@/components/ui";
-import { AblationTable, TuningCard } from "@/components/Experiments";
+import { AblationTable, NationalCard, TuningCard } from "@/components/Experiments";
 
 export const metadata: Metadata = { title: "How it works" };
 
@@ -90,7 +90,7 @@ export default async function ModelPage() {
   if (!info?.metrics.backtest) {
     return <p className="text-ink-2">No backtest has been published yet.</p>;
   }
-  const { backtest: bt, test_years, redfin_lag_months, interval, ablation, tuning } = info.metrics;
+  const { backtest: bt, test_years, redfin_lag_months, interval, ablation, tuning, national } = info.metrics;
   const sortByMae = (o: Record<string, LevelMetrics>) => Object.entries(o).sort((a, b) => a[1].mae - b[1].mae);
   const rel = bt.relative.rel;
 
@@ -192,7 +192,37 @@ export default async function ModelPage() {
               <AblationTable report={ablation.relative_round2} kind="relative" />
             </>
           )}
+          {(ablation.trend_retest || ablation.relative_retest) && (
+            <>
+              <h3 className="mb-1 mt-8 font-semibold">Round 3: re-tests with fixes</h3>
+              <p className="mb-3 text-sm text-ink-2">
+                Zillow market data blew up in 2022 after training on about two years of history, so a data source
+                now needs three years of training history before its booster is used (it is active only in 2024–2025
+                here, a thin test). Unemployment hurt during the pandemic, so it was re-tested clipped to its 2005–2019
+                range, and with April 2020–September 2021 readings treated as missing. Picking that window uses
+                hindsight, and testing two variants raises the odds of a lucky pass; neither passed.
+              </p>
+              {ablation.trend_retest && <AblationTable report={ablation.trend_retest} kind="trend" />}
+              {ablation.relative_retest && <div className="mt-4"><AblationTable report={ablation.relative_retest} kind="relative" /></div>}
+            </>
+          )}
           <p className="mt-2 text-xs text-muted">Differences are against the baseline; green is better.</p>
+        </>
+      )}
+
+      {national && (
+        <>
+          <h2 className="display mt-12 text-2xl font-semibold">The national forecast</h2>
+          <p className="mb-4 mt-3 text-ink-2">
+            Redfin has no national series, so the nation is forecast without market-activity data, the weakest setup.
+            The alternative is a weighted mean of the metro forecasts, which do use Redfin.{" "}
+            {national.adopt
+              ? "It passed the bar, so the national figure is now the weighted mean of the metro forecasts."
+              : national.backtest.aggregate.mae < national.backtest.own_row.mae
+                ? "It lowered average error but didn't win often enough to pass the bar, so the national figure still comes from the national series."
+                : "It didn't beat the current approach, so the national figure still comes from the national series."}
+          </p>
+          <NationalCard report={national} />
         </>
       )}
 

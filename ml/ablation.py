@@ -114,7 +114,7 @@ def run_kind(kind: str, panel: pd.DataFrame, baseline: list[str], candidates: li
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--write-config", action="store_true")
-    ap.add_argument("--only", choices=["trend", "relative", "relative2"])
+    ap.add_argument("--only", choices=["trend", "relative", "relative2", "retest"])
     args = ap.parse_args()
     mp, zp, _ = build()
     cfg = load_config()
@@ -139,11 +139,27 @@ def main() -> None:
         out["relative_round2"] = run_kind("relative", zp, base, [base + [g] for g in ("unemp", "macro")], extra={})
         out_path.write_text(json.dumps(out, indent=2))
 
+    if args.only == "retest":
+        # Round 3: re-tests with fixes, against the currently adopted models. Sparse boosters now need 3 years
+        # of training history (models.MIN_SPARSE_YEARS); unemployment comes clipped to pre-2020 ranges or
+        # with pandemic-era readings masked.
+        base = cfg["trend_groups"]
+        out["trend_retest"] = run_kind("trend", mp, base, [base + ["zheat"], base + ["unemp_clip"],
+                                                           base + ["unemp_mask"]], extra={})
+        out_path.write_text(json.dumps(out, indent=2))
+        base = cfg["relative_groups"]
+        out["relative_retest"] = run_kind("relative", zp, base, [base + ["unemp_clip"], base + ["unemp_mask"]],
+                                          extra={})
+        out_path.write_text(json.dumps(out, indent=2))
+
     if args.write_config:
         if "trend" in out:
             cfg["trend_groups"] = out["trend"]["adopted"]
         if "relative" in out:
             cfg["relative_groups"] = out.get("relative_round2", out["relative"])["adopted"]
+        for kind in ("trend", "relative"):
+            if f"{kind}_retest" in out:
+                cfg[f"{kind}_groups"] = out[f"{kind}_retest"]["adopted"]
         CONFIG.write_text(json.dumps(cfg, indent=2) + "\n")
         print(f"config updated: {cfg}")
 

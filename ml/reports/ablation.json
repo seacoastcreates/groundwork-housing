@@ -943,5 +943,380 @@
       "afford",
       "rent"
     ]
+  },
+  "trend_retest": {
+    "baseline": {
+      "groups": [
+        "base",
+        "heat"
+      ],
+      "mae": 3.4452,
+      "mae_recent": 2.6618,
+      "rank_ic": 0.4807,
+      "by_year": {
+        "2017": {
+          "mae": 2.4857,
+          "rank_ic": 0.607
+        },
+        "2018": {
+          "mae": 2.3944,
+          "rank_ic": 0.3927
+        },
+        "2019": {
+          "mae": 1.9555,
+          "rank_ic": 0.4804
+        },
+        "2020": {
+          "mae": 7.0817,
+          "rank_ic": 0.3991
+        },
+        "2021": {
+          "mae": 4.2722,
+          "rank_ic": 0.5017
+        },
+        "2022": {
+          "mae": 4.8315,
+          "rank_ic": 0.3989
+        },
+        "2023": {
+          "mae": 2.5256,
+          "rank_ic": 0.4815
+        },
+        "2024": {
+          "mae": 3.0948,
+          "rank_ic": 0.4813
+        },
+        "2025": {
+          "mae": 2.3651,
+          "rank_ic": 0.5833
+        }
+      }
+    },
+    "variants": {
+      "+zheat": {
+        "groups": [
+          "base",
+          "heat",
+          "zheat"
+        ],
+        "passes": false,
+        "years_better": 1,
+        "years_active": 2,
+        "mae": 3.3695,
+        "mae_recent": 2.4348,
+        "rank_ic": 0.4902,
+        "by_year": {
+          "2017": {
+            "mae": 2.4857,
+            "rank_ic": 0.607
+          },
+          "2018": {
+            "mae": 2.3944,
+            "rank_ic": 0.3927
+          },
+          "2019": {
+            "mae": 1.9555,
+            "rank_ic": 0.4804
+          },
+          "2020": {
+            "mae": 7.0817,
+            "rank_ic": 0.3991
+          },
+          "2021": {
+            "mae": 4.2722,
+            "rank_ic": 0.5017
+          },
+          "2022": {
+            "mae": 4.8315,
+            "rank_ic": 0.3989
+          },
+          "2023": {
+            "mae": 2.5256,
+            "rank_ic": 0.4815
+          },
+          "2024": {
+            "mae": 2.3874,
+            "rank_ic": 0.5258
+          },
+          "2025": {
+            "mae": 2.3913,
+            "rank_ic": 0.6251
+          }
+        }
+      },
+      "+unemp_clip": {
+        "groups": [
+          "base",
+          "heat",
+          "unemp_clip"
+        ],
+        "passes": false,
+        "years_better": 4,
+        "years_active": 9,
+        "mae": 3.6649,
+        "mae_recent": 2.5499,
+        "rank_ic": 0.472,
+        "by_year": {
+          "2017": {
+            "mae": 2.4547,
+            "rank_ic": 0.6178
+          },
+          "2018": {
+            "mae": 2.276,
+            "rank_ic": 0.4115
+          },
+          "2019": {
+            "mae": 1.9694,
+            "rank_ic": 0.5016
+          },
+          "2020": {
+            "mae": 8.4016,
+            "rank_ic": 0.3896
+          },
+          "2021": {
+            "mae": 4.9337,
+            "rank_ic": 0.4864
+          },
+          "2022": {
+            "mae": 5.299,
+            "rank_ic": 0.3935
+          },
+          "2023": {
+            "mae": 2.5083,
+            "rank_ic": 0.4341
+          },
+          "2024": {
+            "mae": 2.7617,
+            "rank_ic": 0.4444
+          },
+          "2025": {
+            "mae": 2.3797,
+            "rank_ic": 0.5692
+          }
+        }
+      },
+      "+unemp_mask": {
+        "groups": [
+          "base",
+          "heat",
+          "unemp_mask"
+        ],
+        "passes": false,
+        "years_better": 5,
+        "years_active": 9,
+        "mae": 3.4267,
+        "mae_recent": 2.5429,
+        "rank_ic": 0.4755,
+        "by_year": {
+          "2017": {
+            "mae": 2.4472,
+            "rank_ic": 0.6212
+          },
+          "2018": {
+            "mae": 2.2754,
+            "rank_ic": 0.4096
+          },
+          "2019": {
+            "mae": 1.9702,
+            "rank_ic": 0.5016
+          },
+          "2020": {
+            "mae": 7.2247,
+            "rank_ic": 0.411
+          },
+          "2021": {
+            "mae": 4.2671,
+            "rank_ic": 0.4955
+          },
+          "2022": {
+            "mae": 5.0269,
+            "rank_ic": 0.4007
+          },
+          "2023": {
+            "mae": 2.5082,
+            "rank_ic": 0.4283
+          },
+          "2024": {
+            "mae": 2.7406,
+            "rank_ic": 0.4471
+          },
+          "2025": {
+            "mae": 2.3801,
+            "rank_ic": 0.5648
+          }
+        }
+      }
+    },
+    "adopted": [
+      "base",
+      "heat"
+    ]
+  },
+  "relative_retest": {
+    "baseline": {
+      "groups": [
+        "base",
+        "afford",
+        "rent"
+      ],
+      "mae": 2.4584,
+      "mae_recent": 2.4533,
+      "rank_ic": 0.2449,
+      "by_year": {
+        "2017": {
+          "mae": 2.032,
+          "rank_ic": 0.3358
+        },
+        "2018": {
+          "mae": 2.1014,
+          "rank_ic": 0.2868
+        },
+        "2019": {
+          "mae": 1.9516,
+          "rank_ic": 0.3385
+        },
+        "2020": {
+          "mae": 3.0315,
+          "rank_ic": 0.2125
+        },
+        "2021": {
+          "mae": 2.9008,
+          "rank_ic": 0.1433
+        },
+        "2022": {
+          "mae": 2.7486,
+          "rank_ic": 0.1892
+        },
+        "2023": {
+          "mae": 2.3665,
+          "rank_ic": 0.2993
+        },
+        "2024": {
+          "mae": 2.3342,
+          "rank_ic": 0.1657
+        },
+        "2025": {
+          "mae": 2.6591,
+          "rank_ic": 0.2331
+        }
+      },
+      "top_decile_beat": 0.6981,
+      "decile_spread": 3.9578
+    },
+    "variants": {
+      "+unemp_clip": {
+        "groups": [
+          "base",
+          "afford",
+          "rent",
+          "unemp_clip"
+        ],
+        "passes": false,
+        "years_better": 4,
+        "years_active": 9,
+        "mae": 2.447,
+        "mae_recent": 2.4528,
+        "rank_ic": 0.2433,
+        "by_year": {
+          "2017": {
+            "mae": 2.0305,
+            "rank_ic": 0.3374
+          },
+          "2018": {
+            "mae": 2.0894,
+            "rank_ic": 0.2865
+          },
+          "2019": {
+            "mae": 1.9605,
+            "rank_ic": 0.3455
+          },
+          "2020": {
+            "mae": 3.0088,
+            "rank_ic": 0.2035
+          },
+          "2021": {
+            "mae": 2.8562,
+            "rank_ic": 0.1203
+          },
+          "2022": {
+            "mae": 2.7193,
+            "rank_ic": 0.2051
+          },
+          "2023": {
+            "mae": 2.3615,
+            "rank_ic": 0.3091
+          },
+          "2024": {
+            "mae": 2.3368,
+            "rank_ic": 0.1536
+          },
+          "2025": {
+            "mae": 2.6602,
+            "rank_ic": 0.2282
+          }
+        },
+        "top_decile_beat": 0.7027,
+        "decile_spread": 4.0371
+      },
+      "+unemp_mask": {
+        "groups": [
+          "base",
+          "afford",
+          "rent",
+          "unemp_mask"
+        ],
+        "passes": false,
+        "years_better": 5,
+        "years_active": 9,
+        "mae": 2.4563,
+        "mae_recent": 2.4537,
+        "rank_ic": 0.2447,
+        "by_year": {
+          "2017": {
+            "mae": 2.0298,
+            "rank_ic": 0.3362
+          },
+          "2018": {
+            "mae": 2.0902,
+            "rank_ic": 0.2866
+          },
+          "2019": {
+            "mae": 1.9587,
+            "rank_ic": 0.3451
+          },
+          "2020": {
+            "mae": 3.0159,
+            "rank_ic": 0.2153
+          },
+          "2021": {
+            "mae": 2.9302,
+            "rank_ic": 0.1275
+          },
+          "2022": {
+            "mae": 2.721,
+            "rank_ic": 0.2033
+          },
+          "2023": {
+            "mae": 2.3665,
+            "rank_ic": 0.3022
+          },
+          "2024": {
+            "mae": 2.3341,
+            "rank_ic": 0.1575
+          },
+          "2025": {
+            "mae": 2.6606,
+            "rank_ic": 0.2287
+          }
+        },
+        "top_decile_beat": 0.6993,
+        "decile_spread": 3.9541
+      }
+    },
+    "adopted": [
+      "base",
+      "afford",
+      "rent"
+    ]
   }
 }

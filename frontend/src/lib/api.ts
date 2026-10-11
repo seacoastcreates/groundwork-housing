@@ -75,7 +75,8 @@ export type ModelInfo = {
     interval?: Record<"metro" | "zip", [number, number]>;
     backtest?: Record<"metro" | "zip" | "relative", Record<string, LevelMetrics>>;
     config?: { trend_groups: string[]; relative_groups: string[]; trend_params: Record<string, number | string>; relative_params: Record<string, number | string> };
-    ablation?: Partial<Record<"trend" | "relative" | "relative_round2", AblationReport>>;
+    ablation?: Partial<Record<"trend" | "relative" | "relative_round2" | "trend_retest" | "relative_retest", AblationReport>>;
+    national?: NationalReport;
     tuning?: Partial<Record<"trend" | "relative", TuningReport>>;
   };
 };
@@ -90,6 +91,14 @@ export type AblationRun = {
   years_better?: number;
   years_active?: number;
 };
+export type NationalReport = {
+  fidelity_2005_2016: Record<string, { mae: number; bias: number }>;
+  weighting: string;
+  backtest: Record<"aggregate" | "own_row" | "damped", { mae: number; bias: number; by_year: Record<string, number> }>;
+  years_better: number;
+  adopt: boolean;
+};
+
 export type AblationReport = { baseline: AblationRun; variants: Record<string, AblationRun>; adopted: string[] };
 
 type HoldoutScore = { mae: number; rank_ic: number; by_year: Record<string, { mae: number; rank_ic: number }> };
