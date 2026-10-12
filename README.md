@@ -1,6 +1,6 @@
 # Groundwork: US home values and forecasts
 
-Source: https://github.com/seacoastcreates/groundwork-housing
+**Live at https://d25v76vfdz6twh.cloudfront.net** (API docs at `/api/v1/docs`). Source: https://github.com/seacoastcreates/groundwork-housing
 
 Typical home values for 894 metros and 26,268 ZIP codes, each with a 12-month forecast that has been
 backtested against nine years of real outcomes. This is the housing counterpart to the wine price tracker
@@ -219,7 +219,13 @@ The server has 2 GB of memory, and the panels alone need about 5 GB. The server 
 files and model back from S3, reloads the database (`ingest.load` streams values, peaking at about
 460 MB), publishes the model, clears the site's fetch cache and takes a backup.
 
-A local run of the job's container took about 50 minutes: 31 minutes of FRED downloads and 13 minutes
+**FRED from AWS:** fred.stlouisfed.org refuses connections from AWS addresses, but FRED's official
+API (`api.stlouisfed.org`) accepts them. `ingest/fred.py` uses the API when `FRED_API_KEY` is set and
+fredgraph otherwise, as on a local machine. The job reads the key at runtime from the Secrets Manager
+secret `groundwork/fred` (JSON `{"api_key": ...}`, created by hand). Its role may read only that secret.
+At the API's 120 requests a minute, the county series take about an hour.
+
+A local run of the job's container (fredgraph, no key) took about 50 minutes: 31 minutes of FRED downloads and 13 minutes
 of training. Its forecasts were identical to the locally trained model.
 
 ```bash
