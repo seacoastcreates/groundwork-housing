@@ -49,6 +49,9 @@ def run(bucket: str, role_arn: str, image_uri: str, instance_type: str) -> str:
             "S3Output": {"S3Uri": f"s3://{bucket}/{run_prefix}/output", "LocalPath": OUTPUT_DIR,
                          "S3UploadMode": "EndOfJob"},
         }]},
+        # The job resolves the FRED API key from this secret at runtime (only its name is passed here).
+        Environment={"FRED_SECRET_ID": os.environ.get("FRED_SECRET_ID", "groundwork/fred"),
+                     "AWS_DEFAULT_REGION": os.environ.get("AWS_DEFAULT_REGION", "us-east-1")},
         StoppingCondition={"MaxRuntimeInSeconds": 3 * 3600},
         Tags=[{"Key": "project", "Value": "groundwork"}],
     )

@@ -6,6 +6,7 @@ needs about 3 GB. SageMaker uploads /opt/ml/processing/output to S3 when the job
   output/raw/     the downloaded source files
   output/model/   forecasts.parquet, metrics.json, backtest.csv, and VERSION
 """
+import json
 import os
 import shutil
 import subprocess
@@ -27,8 +28,23 @@ def step(label: str, args: list[str], cwd: Path) -> None:
     print(f"=== {label} done in {time.time() - started:.0f}s", flush=True)
 
 
+def fred_key_from_secrets() -> None:
+    """Resolve the FRED API key at runtime from Secrets Manager (FRED_SECRET_ID names the secret).
+    fred.stlouisfed.org refuses AWS addresses; its official API needs this key. The key only lives in
+    this job's environment and is never logged or written out."""
+    secret_id = os.environ.get("FRED_SECRET_ID")
+    if not secret_id:
+        print("FRED_SECRET_ID not set; FRED downloads will try fredgraph", flush=True)
+        return
+    import boto3
+    value = boto3.client("secretsmanager").get_secret_value(SecretId=secret_id)["SecretString"]
+    ENV["FRED_API_KEY"] = json.loads(value)["api_key"]
+    print(f"FRED API key loaded from {secret_id}", flush=True)
+
+
 def main() -> int:
     (WORK / "data" / "raw").mkdir(parents=True, exist_ok=True)
+    fred_key_from_secrets()
     step("download Zillow, Redfin, mortgage rates", ["-m", "ingest.download"], PROGRAM / "backend")
     step("download county unemployment and macro (FRED)", ["-m", "ingest.labor"], PROGRAM / "backend")
     step("backtest and train", ["-W", "ignore", "train.py"], PROGRAM / "ml")

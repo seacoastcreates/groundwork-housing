@@ -25,6 +25,7 @@ from constructs import Construct
 
 REPO = Path(__file__).resolve().parents[1]
 PROJECT = "groundwork"
+FRED_SECRET = "groundwork/fred"
 # Zillow publishes mid-month and LAUS county data by the start of the next; refresh on the 20th.
 REFRESH_SCHEDULE = "cron(0 6 20 * ? *)"
 UBUNTU_ARM64 = "/aws/service/canonical/ubuntu/server/24.04/stable/current/arm64/hvm/ebs-gp3/ami-id"
@@ -84,6 +85,12 @@ class GroundworkStack(Stack):
         sm_role.add_to_policy(iam.PolicyStatement(
             actions=["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"],
             resources=[f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/sagemaker/ProcessingJobs*"],
+        ))
+        # FRED API key (created by hand in Secrets Manager as groundwork/fred); read by the job at runtime.
+        sm_role.add_to_policy(iam.PolicyStatement(
+            sid="ReadFredApiKey",
+            actions=["secretsmanager:GetSecretValue"],
+            resources=[f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:{FRED_SECRET}-*"],
         ))
         sm_role.add_to_policy(iam.PolicyStatement(
             actions=["cloudwatch:PutMetricData"], resources=["*"],

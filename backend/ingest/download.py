@@ -11,6 +11,7 @@ import urllib.request
 from pathlib import Path
 
 from homeprice.data import RAW, ZILLOW_EXTRAS
+from ingest import fred
 
 ZILLOW = "https://files.zillowstatic.com/research/public_csvs"
 TIER = "uc_sfrcondo_tier_0.33_0.67_sm_sa_month"
@@ -22,7 +23,6 @@ SOURCES = {
     f"Metro_zhvf_growth_{TIER}.csv": f"{ZILLOW}/zhvf_growth/Metro_zhvf_growth_{TIER}.csv",
     "redfin_metro_market_tracker.tsv000.gz": "https://redfin-public-data.s3.us-west-2.amazonaws.com/"
                                              "redfin_market_tracker/redfin_metro_market_tracker.tsv000.gz",
-    "mortgage.csv": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US",
     # Census reference files for the unemployment features: county FIPS codes, and the 2023 delineation
     # of counties into metro areas.
     "census_counties.txt": "https://www2.census.gov/geo/docs/reference/codes2020/national_county2020.txt",
@@ -53,6 +53,10 @@ def main() -> None:
     for name, url in SOURCES.items():
         path = fetch(name, url)
         print(f"{name}: {path.stat().st_size / 1e6:.1f} MB")
+    # Mortgage rate from FRED (API or fredgraph, see ingest/fred.py), in fredgraph's CSV layout.
+    rate = fred.series("MORTGAGE30US")
+    rate.rename_axis("observation_date").to_csv(RAW / "mortgage.csv")
+    print(f"mortgage.csv: {len(rate):,} weeks through {rate.index.max():%Y-%m-%d}")
 
 
 if __name__ == "__main__":

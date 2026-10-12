@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm 
 WORKDIR /opt/program
 COPY ml/pyproject.toml ml/pyproject.toml
 COPY ml/homeprice ml/homeprice
-RUN pip install --no-cache-dir ./ml
+RUN pip install --no-cache-dir ./ml boto3
 COPY backend/ingest backend/ingest
 COPY ml/train.py ml/sagemaker_job.py ml/
 COPY ml/reports/*.json ml/reports/
