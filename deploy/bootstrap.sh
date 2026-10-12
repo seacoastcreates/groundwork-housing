@@ -144,5 +144,7 @@ AWS_DEFAULT_REGION=$REGION
 CRON
 
 for i in $(seq 1 60); do curl -sf http://127.0.0.1/ >/dev/null && break; sleep 2; done
-curl -sf http://127.0.0.1/api/v1/health
+# Retried like the checks above: right after the nginx reload a single try can fail and, under set -e,
+# abort the script just short of the end.
+for i in $(seq 1 30); do curl -sf http://127.0.0.1/api/v1/health && break; sleep 2; done
 echo "GROUNDWORK BOOTSTRAP COMPLETE"
