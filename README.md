@@ -202,9 +202,37 @@ cd backend && ../.venv/bin/python -m pytest tests
 ```
 The API docs are at http://localhost:8000/api/v1/docs.
 
+## Deploy on AWS (`infra/`, `deploy/`)
+The CDK stack `Groundwork` (Python, us-east-1) follows the wine tracker's pattern:
+- **Server:** one EC2 t4g.small (Ubuntu 24.04 arm64) running nginx → Next.js (`/`) and FastAPI
+  (`/api/v1`), with PostgreSQL on the same instance. Access is through SSM only, with no SSH, and the
+  security group admits only CloudFront.
+- **Edge and storage:** CloudFront for HTTPS, plus S3 buckets for weekly database backups and refresh
+  artifacts.
+- **Budget:** a $20 monthly budget filtered to `project=groundwork`. This needs the `project` cost
+  allocation tag activated in Billing.
+
+**Monthly refresh, on the 20th:** EventBridge Scheduler → SSM Run Command → `deploy/refresh-aws.sh`
+on the server. That script starts a SageMaker Processing job (`ml/sagemaker_job.py`, image
+`ml/Dockerfile`, ml.t3.xlarge) which downloads every source, builds the panels, backtests and trains.
+The server has 2 GB of memory, and the panels alone need about 5 GB. The server then pulls the job's raw
+files and model back from S3, reloads the database (`ingest.load` streams values, peaking at about
+460 MB), publishes the model, clears the site's fetch cache and takes a backup.
+
+A local run of the job's container took about 50 minutes: 31 minutes of FRED downloads and 13 minutes
+of training. Its forecasts were identical to the locally trained model.
+
+```bash
+./deploy/package.sh                       # bundle: dump of the local database (~53 MB)
+cd infra && python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+npx aws-cdk@2.1143.0 synth --strict && npx aws-cdk@2.1143.0 diff Groundwork
+npx aws-cdk@2.1143.0 deploy Groundwork    # needs Docker running (builds the training image)
+```
+Any change to the source or bundle replaces the instance. It is rebuilt from scratch, restoring the
+newest S3 backup, so a redeploy never rolls data back. `deploy/claude-ops-policy.json` grants the
+deploying IAM user read and ops access to this stack's resources.
+
 ## Next steps
-- Deploy on AWS by reusing the wine tracker's CDK pattern (one EC2 instance, CloudFront, a monthly refresh
-  run through EventBridge and SSM).
 - Re-check zheat once 2026 outcomes arrive (it now needs 3 years of history and is active from 2024).
 - Use real-time vintages (ALFRED) for revised series such as LAUS and payrolls.
 - Add a scorecard comparing our archived forecasts with Zillow's as outcomes arrive.

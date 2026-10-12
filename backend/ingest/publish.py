@@ -3,6 +3,7 @@
     python -m ingest.publish <version>      # e.g. v20261009-1412; omit for the newest artifact
 """
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -11,7 +12,7 @@ import psycopg
 
 from ingest.load import DSN, copy
 
-ARTIFACTS = Path(__file__).resolve().parents[2] / "ml" / "artifacts"
+ARTIFACTS = Path(os.environ.get("HOUSING_ARTIFACTS_DIR", Path(__file__).resolve().parents[2] / "ml" / "artifacts"))
 
 
 def main() -> None:

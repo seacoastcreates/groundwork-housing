@@ -28,11 +28,23 @@ def copy(cur, table: str, df: pd.DataFrame) -> None:
             cp.write(chunk)
 
 
-def long_values(s) -> pd.DataFrame:
-    v = np.exp(s.logs).set_axis(s.meta.RegionID).stack().dropna().rename("value").reset_index()
-    v.columns = ["region_id", "month", "value"]
-    v["month"] = v.month.dt.to_timestamp().dt.date
-    return v
+def copy_values(cur, series_list, chunk: int = 2000) -> int:
+    """COPY home values a block of regions at a time, so the 6.7M rows never sit in memory at once
+    (the production server has 2 GB)."""
+    n = 0
+    with cur.copy("COPY home_values (region_id, month, value) FROM STDIN WITH (FORMAT csv)") as cp:
+        for s in series_list:
+            months = np.array([str(p.start_time.date()) for p in s.logs.columns])
+            ids = s.meta.RegionID.to_numpy()
+            for i in range(0, len(ids), chunk):
+                vals = np.exp(s.logs.iloc[i:i + chunk].to_numpy())
+                r, c = np.nonzero(~np.isnan(vals))
+                buf = io.StringIO()
+                pd.DataFrame({"r": ids[i:i + chunk][r], "m": months[c], "v": vals[r, c].round(2)}).to_csv(
+                    buf, index=False, header=False)
+                cp.write(buf.getvalue())
+                n += len(r)
+    return n
 
 
 def main() -> None:
@@ -75,8 +87,9 @@ def main() -> None:
                        ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, state = EXCLUDED.state,
                          city = EXCLUDED.city, county = EXCLUDED.county, metro_id = EXCLUDED.metro_id,
                          size_rank = EXCLUDED.size_rank""")
-        for table, df in (("home_values", pd.concat([long_values(metros), long_values(zips)])),
-                          ("market_heat", heat), ("mortgage_rates", rate)):
+        cur.execute("TRUNCATE home_values")
+        print(f"home_values: {copy_values(cur, [metros, zips]):,} rows")
+        for table, df in (("market_heat", heat), ("mortgage_rates", rate)):
             cur.execute(f"TRUNCATE {table}")
             copy(cur, table, df)
             print(f"{table}: {len(df):,} rows")

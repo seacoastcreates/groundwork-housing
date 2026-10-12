@@ -3,13 +3,15 @@
 Home values come back as a wide frame of log values: one row per region, one column per month
 (pandas Period). Everything downstream works in log space, so a change is a difference of columns.
 """
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-RAW = Path(__file__).resolve().parents[2] / "data" / "raw"
+# HOUSING_DATA_DIR relocates data/ (raw files and panel cache), e.g. inside the SageMaker container.
+RAW = Path(os.environ.get("HOUSING_DATA_DIR", Path(__file__).resolve().parents[2] / "data")) / "raw"
 TIER = "uc_sfrcondo_tier_0.33_0.67_sm_sa_month"
 REDFIN_COLS = {"MONTHS_OF_SUPPLY": "months_of_supply", "MEDIAN_DOM": "median_dom",
                "AVG_SALE_TO_LIST": "sale_to_list", "PRICE_DROPS": "price_drops"}

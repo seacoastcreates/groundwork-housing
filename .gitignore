@@ -10,3 +10,7 @@ ml/artifacts/
 *.egg-info/
 ml/*.log
 ml/reports/optuna.db
+deploy/bundle/
+infra/cdk.out/
+infra/.venv/
+infra/outputs.json

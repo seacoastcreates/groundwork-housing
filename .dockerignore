@@ -1,0 +1,8 @@
+**
+!ml/pyproject.toml
+!ml/homeprice
+!ml/train.py
+!ml/sagemaker_job.py
+!ml/reports/*.json
+!backend/ingest
+**/__pycache__

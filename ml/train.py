@@ -6,6 +6,7 @@ Postgres with `python -m ingest.publish <version>` from backend/.
     python train.py [--skip-backtest]
 """
 import argparse
+import os
 import json
 import time
 from datetime import datetime, timezone
@@ -20,7 +21,7 @@ from homeprice.models import RelativeModel, TrendModel, load_config
 from homeprice.national import with_national
 from homeprice.pipeline import build
 
-ARTIFACTS = Path(__file__).resolve().parent / "artifacts"
+ARTIFACTS = Path(os.environ.get("HOUSING_ARTIFACTS_DIR", Path(__file__).resolve().parent / "artifacts"))
 REPORTS = Path(__file__).resolve().parent / "reports"
 INTERVAL = (0.10, 0.90)
 
