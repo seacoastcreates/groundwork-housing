@@ -14,3 +14,4 @@ deploy/bundle/
 infra/cdk.out/
 infra/.venv/
 infra/outputs.json
+infra/deploy.log
