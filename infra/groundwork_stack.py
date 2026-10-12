@@ -135,8 +135,10 @@ class GroundworkStack(Stack):
             f"{backups.bucket_name} {self.region} {artifacts.bucket_name} {sm_role.role_arn} {train_image.image_uri}",
         )
 
+        # Not "Server": CDK names the launch template after this id with no stack prefix, and the wine
+        # stack in the same account already owns "ServerLaunchTemplate".
         instance = ec2.Instance(
-            self, "Server",
+            self, "WebServer",
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             instance_type=ec2.InstanceType("t4g.small"),
