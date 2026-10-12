@@ -1,4 +1,5 @@
 **
+!ml/Dockerfile
 !ml/pyproject.toml
 !ml/homeprice
 !ml/train.py
