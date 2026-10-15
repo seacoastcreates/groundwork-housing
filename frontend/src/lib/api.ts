@@ -23,6 +23,9 @@ export type RegionSummary = {
 
 export type RegionList = { total: number; items: RegionSummary[] };
 
+export type MapPoint = Pick<RegionSummary, "id" | "kind" | "name" | "city" | "state" | "size_rank" | "value"
+  | "change_1y_pct" | "change_pct" | "relative_rank_pct"> & { lat: number; lon: number };
+
 export type HeatPoint = {
   month: string;
   months_of_supply: number | null;
@@ -164,6 +167,7 @@ export const api = {
   region: (id: number | string) => get<RegionDetail>(`/regions/${id}`),
   model: () => get<ModelInfo>("/model"),
   trackRecord: () => get<TrackRecord>("/track-record"),
+  map: (metroId?: number) => get<MapPoint[]>(`/map${qs({ metro_id: metroId })}`),
 };
 
 export const usd = (v: number | null | undefined) =>

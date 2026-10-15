@@ -8,6 +8,8 @@ import Affordability from "@/components/Affordability";
 import SaveButton from "@/components/SaveButton";
 import RecordVisit from "@/components/RecordVisit";
 import PastForecasts from "@/components/PastForecasts";
+import DotMap from "@/components/DotMap";
+import { metroLayout } from "@/lib/geo";
 import ValueChart from "@/components/ValueChart";
 import HeatCharts from "@/components/HeatCharts";
 
@@ -30,10 +32,12 @@ export default async function RegionPage({ params }: PageProps<"/regions/[id]">)
   if (!detail) notFound();
   const r = detail.region;
   const isZip = r.kind === "zip";
-  const [zips, ov] = await Promise.all([
+  const [zips, ov, zipPoints] = await Promise.all([
     r.kind === "msa" ? api.zips({ metro_id: r.id, sort: "relative", limit: 1000 }) : null,
     api.overview(),
+    r.kind === "msa" ? api.map(r.id) : null,
   ]);
+  const zipMap = zipPoints ? metroLayout(zipPoints) : null;
   const zillow12 = detail.zillow_forecast.at(-1);
   const horizonLabel = detail.forecast_month ? monthLabel(detail.forecast_month) : "12 months out";
 
@@ -125,6 +129,12 @@ export default async function RegionPage({ params }: PageProps<"/regions/[id]">)
           <p className="mb-4 mt-1 text-sm text-ink-2">
             Strongest forecast relative to the metro first. &ldquo;vs. metro&rdquo; ranks each ZIP within {r.name} (100 = strongest).
           </p>
+          {zipMap && (
+            <div className="mb-6">
+              <DotMap layout={zipMap} metrics={["change_pct", "relative_rank_pct", "change_1y_pct"]}
+                      label={`${zipMap.points.length} ZIP codes in ${r.name}`} />
+            </div>
+          )}
           <ZipExplorer rows={zips.items} metroName={r.name} />
         </section>
       )}

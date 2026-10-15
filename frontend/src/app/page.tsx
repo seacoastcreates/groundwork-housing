@@ -5,6 +5,8 @@ import { Delta, RegionCard, SourceNote, StatTile, type HeaderSort, type SortCol 
 import Search from "@/components/Search";
 import StateFilter from "@/components/StateFilter";
 import YourPlaces from "@/components/YourPlaces";
+import DotMap from "@/components/DotMap";
+import { nationLayout } from "@/lib/geo";
 
 // Column header -> [API sort when descending, API sort when ascending]. Area sorts by size only.
 const COLUMN_SORTS: Record<Exclude<SortCol, "rank">, [string, string | null]> = {
@@ -24,11 +26,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const sort = API_SORTS.includes(sp.sort as string) ? (sp.sort as string) : "size";
   const state = isState(sp.state) ? sp.state : null;
   const limit = Math.min(Math.max(PAGE, Math.round(Number(sp.n) / PAGE) * PAGE || PAGE), 1000);
-  const [ov, metros, risers, laggards] = await Promise.all([
+  const [ov, metros, risers, laggards, mapPoints] = await Promise.all([
     api.overview(),
     api.metros({ sort, limit, state: state ?? undefined }),
     api.zips({ sort: "relative", limit: 10, max_size_rank: ZIP_SIZE_CUTOFF }),
     api.zips({ sort: "relative_low", limit: 10, max_size_rank: ZIP_SIZE_CUTOFF }),
+    api.map(),
   ]);
   if (!ov || !metros) throw new Error("API unavailable");
 
@@ -80,6 +83,13 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       <div className="mb-10"><SourceNote /></div>
 
       <YourPlaces />
+
+      {mapPoints && mapPoints.length > 0 && (
+        <section className="mb-12">
+          <DotMap layout={nationLayout(mapPoints)} metrics={["change_pct", "change_1y_pct"]} sized
+                  label={`All ${mapPoints.length} metros`} />
+        </section>
+      )}
 
       <section className="mb-12">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">

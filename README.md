@@ -8,9 +8,9 @@ backtested against nine years of real outcomes. This is the housing counterpart 
 
 | Layer | Tech |
 |---|---|
-| Frontend | Next.js 16 (App Router, server components), Tailwind v4, Recharts |
+| Frontend | Next.js 16 (App Router, server components), Tailwind v4, Recharts, d3-geo with us-atlas for the maps (projected on the server) |
 | API | FastAPI on Python 3.12 (read-only; forecasts are precomputed) |
-| Database | PostgreSQL: `regions`, `home_values`, `market_heat`, `rents`, `mortgage_rates`, `zillow_forecasts`, `model_runs`, `forecasts`, `backtest_forecasts`, plus the `region_summary` materialized view |
+| Database | PostgreSQL: `regions`, `home_values`, `market_heat`, `rents`, `region_geo`, `mortgage_rates`, `zillow_forecasts`, `model_runs`, `forecasts`, `backtest_forecasts`, plus the `region_summary` materialized view |
 | ML | `homeprice` package (LightGBM), shared by training and loading |
 
 ## Data
@@ -25,6 +25,9 @@ the site goes public.
   (last updated 2026-06-02, through May 2026), so it is used **3 months lagged** in both the backtest and the
   live forecast.
 - **FRED MORTGAGE30US**: the Freddie Mac 30-year fixed rate, averaged by month.
+- **Census Gazetteer ZCTA file (2024)**: an interior point for each ZIP Code Tabulation Area. ZIP codes and
+  ZCTAs share codes for all but 7 of the ZIPs Zillow tracks; a metro is placed at the mean of its ZIPs' points.
+  Loaded into `region_geo` for the maps (all metros on the home page, a metro's ZIPs on its page).
 - **Zillow Observed Rent Index (ZORI)**: typical market rent, all home types, for about 8,400 ZIPs and 750
   metros from 2015. Loaded into `rents` for the affordability section on region pages (rent vs. buy); ZIPs
   Zillow doesn't track show their metro's rent.

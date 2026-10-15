@@ -95,3 +95,12 @@ def test_track_record_summary_and_region_history():
     past = client.get(f"/api/v1/regions/{metro['id']}").json()["track_record"]
     assert len(past) > 20
     assert all(p["low_pct"] <= p["predicted_pct"] <= p["high_pct"] for p in past)
+
+
+def test_map_points_for_metros_and_a_metros_zips():
+    metros = client.get("/api/v1/map").json()
+    assert len(metros) > 800 and all(m["kind"] == "msa" for m in metros)
+    ny = metros[0]
+    assert 40 < ny["lat"] < 42 and -75 < ny["lon"] < -72
+    zips = client.get("/api/v1/map", params={"metro_id": ny["id"]}).json()
+    assert len(zips) > 100 and all(z["kind"] == "zip" for z in zips)

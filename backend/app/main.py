@@ -105,6 +105,21 @@ class RegionDetail(BaseModel):
     track_record: list[PastForecast]
 
 
+class MapPoint(BaseModel):
+    id: int
+    kind: str
+    name: str
+    city: str | None
+    state: str | None
+    size_rank: int
+    lat: float
+    lon: float
+    value: float | None
+    change_1y_pct: float | None
+    change_pct: float | None
+    relative_rank_pct: float | None
+
+
 class RegionList(BaseModel):
     total: int
     items: list[RegionSummary]
@@ -181,6 +196,16 @@ def zips(metro_id: int | None = None, state: str | None = None,
     total, items = summaries(where, filters, sort=sort, limit=limit, offset=offset,
                              metro_id=metro_id, state=state, max_size_rank=max_size_rank)
     return {"total": total, "items": items}
+
+
+@api.get("/map", response_model=list[MapPoint])
+def map_points(metro_id: int | None = Query(None, description="A metro's ZIPs; omit for every metro")) -> list[dict]:
+    """Located regions for the maps: every metro, or the ZIPs of one metro."""
+    where = "r.kind = 'zip' AND r.metro_id = :metro_id" if metro_id is not None else "r.kind = 'msa'"
+    return query(f"""SELECT r.id, r.kind, r.name, r.city, r.state, r.size_rank, g.lat, g.lon, r.value,
+                            r.change_1y_pct, r.change_pct, r.relative_rank_pct
+                     FROM region_summary r JOIN region_geo g ON g.region_id = r.id
+                     WHERE {where} ORDER BY r.size_rank""", metro_id=metro_id)
 
 
 @api.get("/search", response_model=list[RegionSummary])

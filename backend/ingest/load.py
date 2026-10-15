@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import psycopg
 
-from homeprice.data import load_mortgage, load_redfin, load_wide, load_zhvi, load_zillow_forecast
+from homeprice.data import RAW, load_mortgage, load_redfin, load_wide, load_zhvi, load_zillow_forecast
 from homeprice.features import parent_ids
 
 SCHEMA = Path(__file__).resolve().parents[1] / "db" / "schema.sql"
@@ -45,6 +45,27 @@ def copy_values(cur, series_list, chunk: int = 2000) -> int:
                 cp.write(buf.getvalue())
                 n += len(r)
     return n
+
+
+def load_geo(cur) -> None:
+    """ZIP points from the Census Gazetteer (ZIP codes and ZCTAs share codes for almost every ZIP Zillow
+    tracks), then each metro at the mean of its ZIPs. Skipped if the file hasn't been downloaded."""
+    path = RAW / "census_zcta_gazetteer.zip"
+    if not path.exists():
+        print(f"region_geo: skipped, {path.name} not downloaded")
+        return
+    g = pd.read_csv(path, sep="\t", dtype={"GEOID": str})
+    g.columns = g.columns.str.strip()
+    cur.execute("TRUNCATE region_geo")
+    cur.execute("CREATE TEMP TABLE zcta_in (zcta TEXT, lat REAL, lon REAL)")
+    copy(cur, "zcta_in", pd.DataFrame({"zcta": g.GEOID, "lat": g.INTPTLAT, "lon": g.INTPTLONG}))
+    cur.execute("""INSERT INTO region_geo SELECT r.id, z.lat, z.lon FROM regions r JOIN zcta_in z ON z.zcta = r.name
+                   WHERE r.kind = 'zip'""")
+    n_zip = cur.rowcount
+    cur.execute("""INSERT INTO region_geo SELECT r.metro_id, avg(g.lat), avg(g.lon)
+                   FROM region_geo g JOIN regions r ON r.id = g.region_id
+                   WHERE r.kind = 'zip' AND r.metro_id IS NOT NULL GROUP BY r.metro_id""")
+    print(f"region_geo: {n_zip:,} ZIPs, {cur.rowcount:,} metros")
 
 
 def main() -> None:
@@ -101,6 +122,7 @@ def main() -> None:
         copy(cur, "rent_in", rents)
         cur.execute("INSERT INTO rents SELECT * FROM rent_in WHERE region_id IN (SELECT id FROM regions)")
         print(f"rents: {cur.rowcount:,} rows")
+        load_geo(cur)
         cur.execute("CREATE TEMP TABLE zf_in (LIKE zillow_forecasts)")
         copy(cur, "zf_in", zf[["region_id", "base_month", "target", "growth_pct"]])
         cur.execute("INSERT INTO zillow_forecasts SELECT * FROM zf_in WHERE region_id IN (SELECT id FROM regions) "
