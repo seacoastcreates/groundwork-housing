@@ -50,7 +50,10 @@ export default async function RegionPage({ params }: PageProps<"/regions/[id]">)
         <h1 className="display text-4xl font-semibold">
           {isZip ? <><span className="tabular">{r.name}</span> <span className="text-ink-2">{r.city}, {r.state}</span></> : r.name}
         </h1>
-        <SaveButton id={r.id} name={isZip ? `ZIP ${r.name}` : r.name} />
+        <div className="flex gap-2">
+          <Link href={`/compare?ids=${[r.id, r.metro_id].filter(Boolean).join(",")}`} className="segment">Compare</Link>
+          <SaveButton id={r.id} name={isZip ? `ZIP ${r.name}` : r.name} />
+        </div>
       </div>
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

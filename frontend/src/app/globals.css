@@ -23,6 +23,7 @@
   --series-history: #2a78d6;
   --series-forecast: #eb6834;
   --series-zillow: #1baf7a;
+  --series-4: #8a55d0;
   --up: #1d6b38;
   --down: #b3261e;
 }
@@ -47,6 +48,7 @@
     --series-history: #3987e5;
     --series-forecast: #d95926;
     --series-zillow: #199e70;
+    --series-4: #a27ce8;
     --up: #45b86c;
     --down: #e66767;
   }
@@ -71,6 +73,7 @@
   --series-history: #3987e5;
   --series-forecast: #d95926;
   --series-zillow: #199e70;
+  --series-4: #a27ce8;
   --up: #45b86c;
   --down: #e66767;
 }
