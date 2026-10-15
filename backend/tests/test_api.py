@@ -27,6 +27,13 @@ def test_metros_sorted_by_forecast():
     assert all(m["kind"] == "msa" for m in items)
 
 
+def test_metros_by_value_ascending_within_state():
+    items = client.get("/api/v1/metros", params={"sort": "value_low", "state": "CA", "limit": 50}).json()["items"]
+    vals = [m["value"] for m in items if m["value"] is not None]
+    assert vals and vals == sorted(vals)
+    assert all(m["state"] == "CA" for m in items)
+
+
 def test_search_zip_and_metro():
     zips = client.get("/api/v1/search", params={"q": "03909"}).json()
     assert zips and zips[0]["name"] == "03909" and zips[0]["state"] == "ME"

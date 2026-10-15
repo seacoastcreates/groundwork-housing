@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { api, monthLabel, pct, regionTitle, usd } from "@/lib/api";
-import { Delta, RankMeter, RegionTable, SourceNote, StatTile } from "@/components/ui";
+import { api, monthLabel, pct, regionTitle, usd, usdChange } from "@/lib/api";
+import { Delta, RankMeter, SourceNote, StatTile } from "@/components/ui";
+import ZipExplorer from "@/components/ZipExplorer";
 import ValueChart from "@/components/ValueChart";
 import HeatCharts from "@/components/HeatCharts";
 
@@ -10,6 +11,12 @@ export async function generateMetadata({ params }: PageProps<"/regions/[id]">): 
   const { id } = await params;
   const d = /^\d+$/.test(id) ? await api.region(id) : null;
   return { title: d ? regionTitle(d.region) : "Not found" };
+}
+
+// The value a year ago is today's value less the change, so the dollar amount is measured on that base.
+function pastChange(value: number | null, changePct: number | null) {
+  if (value == null || changePct == null) return "—";
+  return usdChange(value / (1 + changePct / 100), changePct);
 }
 
 export default async function RegionPage({ params }: PageProps<"/regions/[id]">) {
@@ -39,9 +46,18 @@ export default async function RegionPage({ params }: PageProps<"/regions/[id]">)
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Typical home value" value={usd(r.value)}
                   sub={detail.origin ? `as of ${monthLabel(detail.origin)}` : undefined} />
-        <StatTile label="Past year" value={<Delta v={r.change_1y_pct} />} sub={<>Past 5 years <Delta v={r.change_5y_pct} /></>} />
+        <StatTile label="Past year" value={<Delta v={r.change_1y_pct} />}
+                  sub={<>{pastChange(r.value, r.change_1y_pct)} on a typical home<br />Past 5 years <Delta v={r.change_5y_pct} /></>} />
         <StatTile label={`Forecast to ${horizonLabel}`} value={<Delta v={r.change_pct} />}
-                  sub={`80% range ${pct(r.low_pct)} to ${pct(r.high_pct)}`} />
+                  sub={r.change_pct == null ? undefined : (
+                    <>
+                      About <strong className="tabular text-ink">{usdChange(r.value, r.change_pct)}</strong> on a typical home
+                      <br />
+                      <span title={`${pct(r.low_pct)} to ${pct(r.high_pct)}`}>
+                        80% range {usdChange(r.value, r.low_pct, true)} to {usdChange(r.value, r.high_pct, true)}
+                      </span>
+                    </>
+                  )} />
         {zillow12 ? (
           <StatTile label="Zillow's own forecast" value={<Delta v={zillow12.growth_pct} />}
                     sub={`to ${monthLabel(zillow12.target)}, for comparison`} />
@@ -88,9 +104,9 @@ export default async function RegionPage({ params }: PageProps<"/regions/[id]">)
         <section className="mt-10">
           <h2 className="display text-2xl font-semibold">ZIP codes in this metro</h2>
           <p className="mb-4 mt-1 text-sm text-ink-2">
-            {zips.total} ZIPs, strongest relative forecast first.
+            Strongest forecast relative to the metro first. &ldquo;vs. metro&rdquo; ranks each ZIP within {r.name} (100 = strongest).
           </p>
-          <RegionTable rows={zips.items} showRank />
+          <ZipExplorer rows={zips.items} metroName={r.name} />
         </section>
       )}
 
