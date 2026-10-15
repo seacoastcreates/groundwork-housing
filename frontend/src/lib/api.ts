@@ -40,7 +40,30 @@ export type RegionDetail = {
   zillow_forecast: { target: string; growth_pct: number }[];
   zillow_base: string | null;
   rent: { month: string; rent: number; change_1y_pct: number | null; source: "own" | "metro" } | null;
+  /** Absent from responses cached before the track record existed. */
+  track_record?: PastForecast[];
 };
+
+export type PastForecast = {
+  origin: string;
+  target: string;
+  predicted_pct: number;
+  low_pct: number;
+  high_pct: number;
+  actual_pct: number;
+};
+
+export type TrackRecordRow = {
+  period: string;
+  level: "metro" | "zip";
+  n: number;
+  mae: number;
+  bias: number;
+  coverage_pct: number;
+  direction_pct: number;
+};
+
+export type TrackRecord = { rows: TrackRecordRow[]; first_origin: string | null; last_origin: string | null };
 
 export type Overview = {
   nation: RegionSummary;
@@ -140,6 +163,7 @@ export const api = {
     get<RegionList>(`/zips${qs(p)}`),
   region: (id: number | string) => get<RegionDetail>(`/regions/${id}`),
   model: () => get<ModelInfo>("/model"),
+  trackRecord: () => get<TrackRecord>("/track-record"),
 };
 
 export const usd = (v: number | null | undefined) =>

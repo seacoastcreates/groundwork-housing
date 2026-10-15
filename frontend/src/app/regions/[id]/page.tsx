@@ -7,6 +7,7 @@ import ZipExplorer from "@/components/ZipExplorer";
 import Affordability from "@/components/Affordability";
 import SaveButton from "@/components/SaveButton";
 import RecordVisit from "@/components/RecordVisit";
+import PastForecasts from "@/components/PastForecasts";
 import ValueChart from "@/components/ValueChart";
 import HeatCharts from "@/components/HeatCharts";
 
@@ -104,6 +105,8 @@ export default async function RegionPage({ params }: PageProps<"/regions/[id]">)
           </p>
         </section>
       )}
+
+      {detail.track_record?.length ? <PastForecasts items={detail.track_record} name={isZip ? `ZIP ${r.name}` : r.name} /> : null}
 
       {/* Keyed by region so the calculator's inputs reset when navigating between areas. */}
       {r.value != null && <Affordability key={r.id} detail={detail} mortgageRate={ov?.mortgage_rate ?? null} />}

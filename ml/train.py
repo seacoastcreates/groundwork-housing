@@ -1,6 +1,7 @@
 """Backtest, fit on all history, and forecast from the latest month.
 
-Writes ml/artifacts/<version>/ with forecasts.parquet, metrics.json and backtest.csv. Load them into
+Writes ml/artifacts/<version>/ with forecasts.parquet, metrics.json, backtest.csv and
+backtest_forecasts.parquet (every out-of-sample backtest forecast, for the site's track record). Load them into
 Postgres with `python -m ingest.publish <version>` from backend/.
 
     python train.py [--skip-backtest]
@@ -56,10 +57,8 @@ def main() -> None:
         res.to_csv(out / "backtest.csv", index=False)
         metrics["backtest"] = backtest.summarize(res)
         # Empirical 80% interval from out-of-sample errors (actual minus forecast, in log change).
-        err = preds.y - preds.pred_two_part
-        is_zip = preds.parent_id.notna()
-        resid = {k: tuple(float(err[m].quantile(q)) for q in INTERVAL)
-                 for k, m in (("metro", ~is_zip), ("zip", is_zip))}
+        resid = backtest.interval_residuals(preds, INTERVAL)
+        backtest.forecast_table(preds, resid).to_parquet(out / "backtest_forecasts.parquet", index=False)
         metrics["interval"] = {k: [round(v * 100, 2) for v in r] for k, r in resid.items()}
         print(json.dumps({k: metrics["backtest"][k] for k in metrics["backtest"]}, indent=1, default=str)[:3000])
 

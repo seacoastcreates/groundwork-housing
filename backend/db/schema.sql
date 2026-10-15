@@ -81,6 +81,19 @@ CREATE TABLE IF NOT EXISTS forecasts (
     PRIMARY KEY (model_version, region_id)
 );
 
+-- The active model's walk-forward backtest: for each region and test origin (2017-2025, quarterly), the
+-- 12-month change the model would have forecast using only data from before that date, its 80% range, and
+-- what actually happened. Replaced on publish. Feeds the track record pages.
+CREATE TABLE IF NOT EXISTS backtest_forecasts (
+    region_id     INTEGER NOT NULL REFERENCES regions(id) ON DELETE CASCADE,
+    origin        DATE NOT NULL,
+    predicted_pct REAL NOT NULL,
+    low_pct       REAL NOT NULL,
+    high_pct      REAL NOT NULL,
+    actual_pct    REAL NOT NULL,
+    PRIMARY KEY (region_id, origin)
+);
+
 -- One row per region: latest value, 1- and 5-year change, and the active model's forecast. The API reads
 -- this instead of joining 6.7M monthly rows per request. Refreshed by ingest.load and ingest.publish.
 CREATE MATERIALIZED VIEW IF NOT EXISTS region_summary AS

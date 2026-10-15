@@ -4,7 +4,7 @@ and train, then hand back the raw files (for the server's database load) and the
 Everything heavy runs here because the web server has 2 GB of memory and building the ZIP panels alone
 needs about 3 GB. SageMaker uploads /opt/ml/processing/output to S3 when the job ends:
   output/raw/     the downloaded source files
-  output/model/   forecasts.parquet, metrics.json, backtest.csv, and VERSION
+  output/model/   forecasts.parquet, metrics.json, backtest.csv, backtest_forecasts.parquet, and VERSION
 """
 import json
 import os
