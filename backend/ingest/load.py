@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import psycopg
 
-from homeprice.data import load_mortgage, load_redfin, load_zhvi, load_zillow_forecast
+from homeprice.data import load_mortgage, load_redfin, load_wide, load_zhvi, load_zillow_forecast
 from homeprice.features import parent_ids
 
 SCHEMA = Path(__file__).resolve().parents[1] / "db" / "schema.sql"
@@ -70,6 +70,9 @@ def main() -> None:
     rate = load_mortgage().reset_index()
     rate.columns = ["month", "rate"]
     rate["month"] = rate.month.dt.to_timestamp().dt.date
+    rents = pd.concat([load_wide("rent_metro"), load_wide("rent_zip")]).rename_axis("region_id")
+    rents.columns = rents.columns.to_timestamp().date
+    rents = rents.stack().dropna().rename("rent").rename_axis(["region_id", "month"]).reset_index().round({"rent": 2})
     zf = pd.concat([load_zillow_forecast("Metro"), load_zillow_forecast("Zip")])
     zf = zf.rename(columns={"RegionID": "region_id", "BaseDate": "base_month"})
     zf["base_month"] = pd.to_datetime(zf.base_month).dt.to_period("M").dt.to_timestamp().dt.date
@@ -93,6 +96,11 @@ def main() -> None:
             cur.execute(f"TRUNCATE {table}")
             copy(cur, table, df)
             print(f"{table}: {len(df):,} rows")
+        cur.execute("TRUNCATE rents")
+        cur.execute("CREATE TEMP TABLE rent_in (LIKE rents)")
+        copy(cur, "rent_in", rents)
+        cur.execute("INSERT INTO rents SELECT * FROM rent_in WHERE region_id IN (SELECT id FROM regions)")
+        print(f"rents: {cur.rowcount:,} rows")
         cur.execute("CREATE TEMP TABLE zf_in (LIKE zillow_forecasts)")
         copy(cur, "zf_in", zf[["region_id", "base_month", "target", "growth_pct"]])
         cur.execute("INSERT INTO zillow_forecasts SELECT * FROM zf_in WHERE region_id IN (SELECT id FROM regions) "

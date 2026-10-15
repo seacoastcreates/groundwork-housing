@@ -33,6 +33,14 @@ CREATE TABLE IF NOT EXISTS market_heat (
     PRIMARY KEY (region_id, month)
 );
 
+-- Zillow Observed Rent Index (typical market rent, all homes, smoothed). ZIPs and metros, from 2015.
+CREATE TABLE IF NOT EXISTS rents (
+    region_id INTEGER NOT NULL REFERENCES regions(id) ON DELETE CASCADE,
+    month     DATE NOT NULL,
+    rent      REAL NOT NULL CHECK (rent > 0),
+    PRIMARY KEY (region_id, month)
+);
+
 CREATE TABLE IF NOT EXISTS mortgage_rates (
     month DATE PRIMARY KEY,
     rate  REAL NOT NULL                          -- monthly mean of the weekly 30-year fixed rate

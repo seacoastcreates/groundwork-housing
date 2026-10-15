@@ -61,6 +61,13 @@ class ZillowPoint(BaseModel):
     growth_pct: float
 
 
+class Rent(BaseModel):
+    month: date
+    rent: float
+    change_1y_pct: float | None
+    source: Literal["own", "metro"]     # "metro" when Zillow doesn't track rent for the ZIP itself
+
+
 class RegionDetail(BaseModel):
     region: RegionSummary
     history: list[ValuePoint]
@@ -69,6 +76,7 @@ class RegionDetail(BaseModel):
     heat: list[HeatPoint]
     zillow_forecast: list[ZillowPoint]
     zillow_base: date | None
+    rent: Rent | None
 
 
 class RegionList(BaseModel):
@@ -174,13 +182,14 @@ def region(region_id: int, since: int = Query(2000, ge=1990)) -> dict:
     zf = query("""SELECT target, growth_pct, base_month FROM zillow_forecasts WHERE region_id = :id
                   AND base_month = (SELECT max(base_month) FROM zillow_forecasts WHERE region_id = :id)
                   ORDER BY target""", id=region_id)
+    rent = latest_rent(region_id, "own") or (latest_rent(reg["metro_id"], "metro") if reg["metro_id"] else None)
     run = query("SELECT origin, horizon FROM model_runs WHERE is_active")
     origin = run[0]["origin"] if run else None
     fmonth = date(origin.year + (origin.month - 1 + run[0]["horizon"]) // 12,
                   (origin.month - 1 + run[0]["horizon"]) % 12 + 1, 1) if run else None
     return {"region": reg, "history": history, "origin": origin, "forecast_month": fmonth, "heat": heat,
             "zillow_forecast": [{"target": r["target"], "growth_pct": r["growth_pct"]} for r in zf],
-            "zillow_base": zf[0]["base_month"] if zf else None}
+            "zillow_base": zf[0]["base_month"] if zf else None, "rent": rent}
 
 
 @api.get("/model")
@@ -189,6 +198,16 @@ def model() -> dict:
     if not run:
         raise HTTPException(503, "No active model")
     return run[0]
+
+
+def latest_rent(region_id: int, source: str) -> dict | None:
+    rows = query("SELECT month, rent FROM rents WHERE region_id = :id ORDER BY month DESC LIMIT 13", id=region_id)
+    if not rows:
+        return None
+    last, oldest = rows[0], rows[-1]
+    months_apart = (last["month"].year - oldest["month"].year) * 12 + last["month"].month - oldest["month"].month
+    change = (last["rent"] / oldest["rent"] - 1) * 100 if months_apart == 12 else None
+    return {"month": last["month"], "rent": last["rent"], "change_1y_pct": change, "source": source}
 
 
 app.include_router(api)
