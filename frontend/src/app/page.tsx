@@ -4,6 +4,7 @@ import { isState } from "@/lib/states";
 import { Delta, RegionCard, SourceNote, StatTile, type HeaderSort, type SortCol } from "@/components/ui";
 import Search from "@/components/Search";
 import StateFilter from "@/components/StateFilter";
+import YourPlaces from "@/components/YourPlaces";
 
 // Column header -> [API sort when descending, API sort when ascending]. Area sorts by size only.
 const COLUMN_SORTS: Record<Exclude<SortCol, "rank">, [string, string | null]> = {
@@ -77,6 +78,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       </section>
 
       <div className="mb-10"><SourceNote /></div>
+
+      <YourPlaces />
 
       <section className="mb-12">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
