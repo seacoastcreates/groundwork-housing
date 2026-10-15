@@ -65,3 +65,13 @@ def test_metro_zip_list_is_ranked_within_metro():
 
 def test_unknown_region_404():
     assert client.get("/api/v1/regions/999999999").status_code == 404
+
+
+def test_region_rent_own_or_metro():
+    metro = client.get("/api/v1/metros", params={"limit": 1}).json()["items"][0]
+    rent = client.get(f"/api/v1/regions/{metro['id']}").json()["rent"]
+    assert rent["source"] == "own" and rent["rent"] > 0 and rent["change_1y_pct"] is not None
+    # A ZIP Zillow doesn't track rent for falls back to its metro's rent.
+    zips = client.get("/api/v1/zips", params={"metro_id": metro["id"], "sort": "size", "limit": 1000}).json()["items"]
+    sources = {client.get(f"/api/v1/regions/{z['id']}").json()["rent"]["source"] for z in zips[-5:]}
+    assert sources <= {"own", "metro"} and sources

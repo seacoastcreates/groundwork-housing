@@ -39,6 +39,7 @@ export type RegionDetail = {
   heat: HeatPoint[];
   zillow_forecast: { target: string; growth_pct: number }[];
   zillow_base: string | null;
+  rent: { month: string; rent: number; change_1y_pct: number | null; source: "own" | "metro" } | null;
 };
 
 export type Overview = {

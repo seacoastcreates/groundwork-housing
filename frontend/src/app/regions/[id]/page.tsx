@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { api, monthLabel, pct, regionTitle, usd, usdChange } from "@/lib/api";
 import { Delta, RankMeter, SourceNote, StatTile } from "@/components/ui";
 import ZipExplorer from "@/components/ZipExplorer";
+import Affordability from "@/components/Affordability";
 import ValueChart from "@/components/ValueChart";
 import HeatCharts from "@/components/HeatCharts";
 
@@ -26,7 +27,10 @@ export default async function RegionPage({ params }: PageProps<"/regions/[id]">)
   if (!detail) notFound();
   const r = detail.region;
   const isZip = r.kind === "zip";
-  const zips = r.kind === "msa" ? await api.zips({ metro_id: r.id, sort: "relative", limit: 1000 }) : null;
+  const [zips, ov] = await Promise.all([
+    r.kind === "msa" ? api.zips({ metro_id: r.id, sort: "relative", limit: 1000 }) : null,
+    api.overview(),
+  ]);
   const zillow12 = detail.zillow_forecast.at(-1);
   const horizonLabel = detail.forecast_month ? monthLabel(detail.forecast_month) : "12 months out";
 
@@ -91,6 +95,9 @@ export default async function RegionPage({ params }: PageProps<"/regions/[id]">)
           </p>
         </section>
       )}
+
+      {/* Keyed by region so the calculator's inputs reset when navigating between areas. */}
+      {r.value != null && <Affordability key={r.id} detail={detail} mortgageRate={ov?.mortgage_rate ?? null} />}
 
       {detail.heat.length > 0 && (
         <section className="mt-10">

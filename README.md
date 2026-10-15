@@ -10,7 +10,7 @@ backtested against nine years of real outcomes. This is the housing counterpart 
 |---|---|
 | Frontend | Next.js 16 (App Router, server components), Tailwind v4, Recharts |
 | API | FastAPI on Python 3.12 (read-only; forecasts are precomputed) |
-| Database | PostgreSQL: `regions`, `home_values`, `market_heat`, `mortgage_rates`, `zillow_forecasts`, `model_runs`, `forecasts`, plus the `region_summary` materialized view |
+| Database | PostgreSQL: `regions`, `home_values`, `market_heat`, `rents`, `mortgage_rates`, `zillow_forecasts`, `model_runs`, `forecasts`, plus the `region_summary` materialized view |
 | ML | `homeprice` package (LightGBM), shared by training and loading |
 
 ## Data
@@ -25,6 +25,9 @@ the site goes public.
   (last updated 2026-06-02, through May 2026), so it is used **3 months lagged** in both the backtest and the
   live forecast.
 - **FRED MORTGAGE30US**: the Freddie Mac 30-year fixed rate, averaged by month.
+- **Zillow Observed Rent Index (ZORI)**: typical market rent, all home types, for about 8,400 ZIPs and 750
+  metros from 2015. Loaded into `rents` for the affordability section on region pages (rent vs. buy); ZIPs
+  Zillow doesn't track show their metro's rent.
 
 For the feature experiments (most were not adopted; see below):
 - **Zillow**: bottom- and top-tier ZHVI by ZIP; observed rent (ZORI) by ZIP and metro, from 2015; and metro
@@ -242,4 +245,4 @@ deploying IAM user read and ops access to this stack's resources.
 - Re-check zheat once 2026 outcomes arrive (it now needs 3 years of history and is active from 2024).
 - Use real-time vintages (ALFRED) for revised series such as LAUS and payrolls.
 - Add a scorecard comparing our archived forecasts with Zillow's as outcomes arrive.
-- Add rent (Zillow ZORI) and county-level series.
+- Add county-level series.
