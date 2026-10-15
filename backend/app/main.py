@@ -68,6 +68,31 @@ class Rent(BaseModel):
     source: Literal["own", "metro"]     # "metro" when Zillow doesn't track rent for the ZIP itself
 
 
+class PastForecast(BaseModel):
+    origin: date
+    target: date
+    predicted_pct: float
+    low_pct: float
+    high_pct: float
+    actual_pct: float
+
+
+class TrackRecordRow(BaseModel):
+    period: str                         # a year, or "all"
+    level: Literal["metro", "zip"]
+    n: int
+    mae: float                          # mean absolute error, percentage points
+    bias: float                         # mean of forecast minus outcome
+    coverage_pct: float                 # share of outcomes inside the 80% range
+    direction_pct: float                # share where forecast and outcome had the same sign
+
+
+class TrackRecord(BaseModel):
+    rows: list[TrackRecordRow]
+    first_origin: date | None
+    last_origin: date | None
+
+
 class RegionDetail(BaseModel):
     region: RegionSummary
     history: list[ValuePoint]
@@ -77,6 +102,7 @@ class RegionDetail(BaseModel):
     zillow_forecast: list[ZillowPoint]
     zillow_base: date | None
     rent: Rent | None
+    track_record: list[PastForecast]
 
 
 class RegionList(BaseModel):
@@ -198,7 +224,27 @@ def region(region_id: int, since: int = Query(2000, ge=1990)) -> dict:
                   (origin.month - 1 + run[0]["horizon"]) % 12 + 1, 1) if run else None
     return {"region": reg, "history": history, "origin": origin, "forecast_month": fmonth, "heat": heat,
             "zillow_forecast": [{"target": r["target"], "growth_pct": r["growth_pct"]} for r in zf],
-            "zillow_base": zf[0]["base_month"] if zf else None, "rent": rent}
+            "zillow_base": zf[0]["base_month"] if zf else None, "rent": rent,
+            "track_record": query("""SELECT origin, (origin + make_interval(months => :h))::date AS target, predicted_pct,
+                                            low_pct, high_pct, actual_pct
+                                     FROM backtest_forecasts WHERE region_id = :id ORDER BY origin""",
+                                  id=region_id, h=run[0]["horizon"] if run else 12)}
+
+
+@api.get("/track-record", response_model=TrackRecord)
+def track_record() -> dict:
+    """Accuracy of the active model's walk-forward backtest, by test year and overall, for metros and ZIPs."""
+    rows = query("""
+        SELECT COALESCE(extract(year FROM b.origin)::int::text, 'all') AS period,
+               CASE WHEN r.kind = 'zip' THEN 'zip' ELSE 'metro' END AS level, count(*) AS n,
+               avg(abs(predicted_pct - actual_pct)) AS mae, avg(predicted_pct - actual_pct) AS bias,
+               100 * avg((actual_pct BETWEEN low_pct AND high_pct)::int) AS coverage_pct,
+               100 * avg((sign(predicted_pct) = sign(actual_pct))::int) AS direction_pct
+        FROM backtest_forecasts b JOIN regions r ON r.id = b.region_id
+        GROUP BY GROUPING SETS ((extract(year FROM b.origin), level), (level))
+        ORDER BY period, level""")
+    span = query("SELECT min(origin) AS first, max(origin) AS last FROM backtest_forecasts")[0]
+    return {"rows": rows, "first_origin": span["first"], "last_origin": span["last"]}
 
 
 @api.get("/model")

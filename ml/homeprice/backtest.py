@@ -95,6 +95,28 @@ def run(markets: pd.DataFrame, zips: pd.DataFrame, log=print) -> tuple[pd.DataFr
     return pd.DataFrame(rows), pd.concat(preds, ignore_index=True)
 
 
+def interval_residuals(preds: pd.DataFrame, q: tuple[float, float]) -> dict[str, tuple[float, float]]:
+    """Empirical quantiles of out-of-sample error (log change), separately for metros and ZIPs."""
+    err = preds.y - preds.pred_two_part
+    is_zip = preds.parent_id.notna()
+    return {k: tuple(float(err[m].quantile(x)) for x in q) for k, m in (("metro", ~is_zip), ("zip", is_zip))}
+
+
+def forecast_table(preds: pd.DataFrame, resid: dict[str, tuple[float, float]]) -> pd.DataFrame:
+    """Every out-of-sample backtest forecast as percent changes, with its 80% range and the outcome.
+    This is what the site's track record shows: what the model, trained only on data before each origin,
+    would have forecast, and what happened."""
+    is_zip = preds.parent_id.notna().to_numpy()
+    lo = np.where(is_zip, resid["zip"][0], resid["metro"][0])
+    hi = np.where(is_zip, resid["zip"][1], resid["metro"][1])
+    pred = preds.pred_two_part.to_numpy()
+    pct = lambda x: (np.exp(x) - 1) * 100
+    origin = preds.origin.dt.to_timestamp() if isinstance(preds.origin.dtype, pd.PeriodDtype) else preds.origin
+    return pd.DataFrame({"region_id": preds.region_id.astype(int).to_numpy(), "origin": origin.dt.date.to_numpy(),
+                         "predicted_pct": pct(pred), "low_pct": pct(pred + lo), "high_pct": pct(pred + hi),
+                         "actual_pct": pct(preds.y.to_numpy())}).round(3)
+
+
 def fold_split(panel: pd.DataFrame, years):
     """(year, train, test) for one panel, with the same leakage rule as the full backtest."""
     for yr in years:

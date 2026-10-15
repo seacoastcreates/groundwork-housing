@@ -83,3 +83,15 @@ def test_regions_by_ids_keeps_order_and_skips_unknown():
     got = client.get("/api/v1/regions", params={"ids": ",".join(map(str, ids))}).json()
     assert [r["id"] for r in got] == [metros[2]["id"], metros[0]["id"]]
     assert client.get("/api/v1/regions", params={"ids": "1,abc"}).status_code == 422
+
+
+def test_track_record_summary_and_region_history():
+    tr = client.get("/api/v1/track-record").json()
+    overall = {r["level"]: r for r in tr["rows"] if r["period"] == "all"}
+    assert set(overall) == {"metro", "zip"}
+    # Ranges are empirical 80% quantiles of these same errors, so pooled coverage is close to 80%.
+    assert all(70 < r["coverage_pct"] < 90 for r in overall.values())
+    metro = client.get("/api/v1/metros", params={"limit": 1}).json()["items"][0]
+    past = client.get(f"/api/v1/regions/{metro['id']}").json()["track_record"]
+    assert len(past) > 20
+    assert all(p["low_pct"] <= p["predicted_pct"] <= p["high_pct"] for p in past)

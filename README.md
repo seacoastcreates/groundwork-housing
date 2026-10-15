@@ -10,7 +10,7 @@ backtested against nine years of real outcomes. This is the housing counterpart 
 |---|---|
 | Frontend | Next.js 16 (App Router, server components), Tailwind v4, Recharts |
 | API | FastAPI on Python 3.12 (read-only; forecasts are precomputed) |
-| Database | PostgreSQL: `regions`, `home_values`, `market_heat`, `rents`, `mortgage_rates`, `zillow_forecasts`, `model_runs`, `forecasts`, plus the `region_summary` materialized view |
+| Database | PostgreSQL: `regions`, `home_values`, `market_heat`, `rents`, `mortgage_rates`, `zillow_forecasts`, `model_runs`, `forecasts`, `backtest_forecasts`, plus the `region_summary` materialized view |
 | ML | `homeprice` package (LightGBM), shared by training and loading |
 
 ## Data
@@ -98,6 +98,11 @@ Ranking ZIPs within their metro (the site's headline):
 - Affordability and rent features in the relative model (see the feature experiments below).
 - A national forecast built as a labor-force-weighted mean of the metro forecasts (a disclosed override; see
   the national forecast section below).
+
+**On the site:** `train.py` also writes every out-of-sample backtest forecast, with its 80% range and the
+outcome, to `backtest_forecasts.parquet`, and `ingest.publish` loads it into `backtest_forecasts`. Region pages
+show that area's past forecasts against what happened, and `/track-record` summarizes accuracy, range coverage
+and direction by year. `ml/export_backtest.py <version>` backfills the file for a model trained before this.
 
 ### Feature experiments (`ml/ablation.py`, `ml/reports/ablation.json`)
 Each group was added on its own to the baseline and run through the walk-forward backtest. The rule was
@@ -244,5 +249,5 @@ deploying IAM user read and ops access to this stack's resources.
 ## Next steps
 - Re-check zheat once 2026 outcomes arrive (it now needs 3 years of history and is active from 2024).
 - Use real-time vintages (ALFRED) for revised series such as LAUS and payrolls.
-- Add a scorecard comparing our archived forecasts with Zillow's as outcomes arrive.
+- Score archived live forecasts, ours and Zillow's, on the track record page as outcomes arrive.
 - Add county-level series.

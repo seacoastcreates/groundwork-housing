@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 import psycopg
 
-from ingest.load import DSN, copy
+from ingest.load import DSN, SCHEMA, copy
 
 ARTIFACTS = Path(os.environ.get("HOUSING_ARTIFACTS_DIR", Path(__file__).resolve().parents[2] / "ml" / "artifacts"))
 
@@ -22,6 +22,7 @@ def main() -> None:
     fc = pd.read_parquet(path / "forecasts.parquet").round(3)
     origin = pd.Period(metrics["origin"], freq="M").to_timestamp().date()
     with psycopg.connect(DSN) as conn, conn.cursor() as cur:
+        cur.execute(SCHEMA.read_text())     # idempotent; adds tables newer than the database
         cur.execute("UPDATE model_runs SET is_active = FALSE WHERE is_active")
         cur.execute("""INSERT INTO model_runs (model_version, origin, horizon, metrics, is_active)
                        VALUES (%s, %s, %s, %s, TRUE)
@@ -36,8 +37,21 @@ def main() -> None:
                            FROM forecasts f JOIN regions r ON r.id = f.region_id
                            WHERE f.model_version = %(v)s AND r.kind = 'zip' AND r.metro_id IS NOT NULL) k
                        WHERE f.model_version = %(v)s AND f.region_id = k.region_id""", {"v": version})
+        # The track record belongs to the active model, so it is replaced (or cleared, for an artifact
+        # trained before train.py wrote it; backfill with ml/export_backtest.py).
+        cur.execute("TRUNCATE backtest_forecasts")
+        bt_path = path / "backtest_forecasts.parquet"
+        n_bt = 0
+        if bt_path.exists():
+            bt = pd.read_parquet(bt_path)
+            cur.execute("CREATE TEMP TABLE bt_in (LIKE backtest_forecasts)")
+            copy(cur, "bt_in", bt[["region_id", "origin", "predicted_pct", "low_pct", "high_pct", "actual_pct"]])
+            cur.execute("INSERT INTO backtest_forecasts SELECT * FROM bt_in WHERE region_id IN (SELECT id FROM regions) "
+                        "ON CONFLICT DO NOTHING")
+            n_bt = cur.rowcount
+            cur.execute("ANALYZE backtest_forecasts")
         cur.execute("REFRESH MATERIALIZED VIEW region_summary")
-    print(f"published {version}: {len(fc):,} forecasts from {origin}")
+    print(f"published {version}: {len(fc):,} forecasts from {origin}, {n_bt:,} backtest forecasts")
 
 
 if __name__ == "__main__":
