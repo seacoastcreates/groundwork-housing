@@ -5,7 +5,15 @@ import { useEffect, useId, useRef, useState } from "react";
 import { usd, type RegionSummary } from "@/lib/api";
 import { Delta } from "@/components/ui";
 
-export default function Search({ autoFocus = false, compact = false }: { autoFocus?: boolean; compact?: boolean }) {
+export default function Search({ autoFocus = false, compact = false, onSelect, placeholder, shortcut = true }: {
+  autoFocus?: boolean;
+  compact?: boolean;
+  /** Called with the chosen region instead of navigating to its page. */
+  onSelect?: (r: RegionSummary) => void;
+  placeholder?: string;
+  /** Whether "/" focuses this box. */
+  shortcut?: boolean;
+}) {
   const [q, setQ] = useState("");
   const [items, setItems] = useState<RegionSummary[]>([]);
   // The query the current items answer, so "No matches" only shows once a search has come back.
@@ -39,6 +47,7 @@ export default function Search({ autoFocus = false, compact = false }: { autoFoc
 
   // "/" focuses search from anywhere on the page, unless the user is already typing somewhere.
   useEffect(() => {
+    if (!shortcut) return;
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -50,7 +59,7 @@ export default function Search({ autoFocus = false, compact = false }: { autoFoc
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, []);
+  }, [shortcut]);
 
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
@@ -70,8 +79,11 @@ export default function Search({ autoFocus = false, compact = false }: { autoFoc
     setQ("");
     setItems([]);
     setOpen(false);
-    input.current?.blur();
-    router.push(`/regions/${r.id}`);
+    if (onSelect) onSelect(r);
+    else {
+      input.current?.blur();
+      router.push(`/regions/${r.id}`);
+    }
   };
 
   return (
@@ -100,9 +112,9 @@ export default function Search({ autoFocus = false, compact = false }: { autoFoc
             else input.current?.blur();
           }
         }}
-        placeholder={compact ? "Search ZIP, city, metro" : "Search a ZIP, city or metro"}
+        placeholder={placeholder ?? (compact ? "Search ZIP, city, metro" : "Search a ZIP, city or metro")}
         aria-label="Search a ZIP, city or metro"
-        aria-keyshortcuts="/"
+        aria-keyshortcuts={shortcut ? "/" : undefined}
         role="combobox"
         aria-expanded={expanded}
         aria-controls={listId}
@@ -111,7 +123,7 @@ export default function Search({ autoFocus = false, compact = false }: { autoFoc
           compact ? "px-3 py-1.5 text-sm" : "px-4 py-2.5 text-base"
         }`}
       />
-      {q === "" && (
+      {q === "" && shortcut && (
         <kbd
           aria-hidden="true"
           className="pointer-events-none absolute right-2.5 top-1/2 hidden sm:block -translate-y-1/2 rounded border border-line px-1.5 text-xs text-muted"
