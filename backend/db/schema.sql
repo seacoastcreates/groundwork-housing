@@ -33,6 +33,14 @@ CREATE TABLE IF NOT EXISTS market_heat (
     PRIMARY KEY (region_id, month)
 );
 
+-- A point for each region, for the maps: a ZIP's Census ZCTA interior point, and for a metro the mean of
+-- its ZIPs' points.
+CREATE TABLE IF NOT EXISTS region_geo (
+    region_id INTEGER PRIMARY KEY REFERENCES regions(id) ON DELETE CASCADE,
+    lat       REAL NOT NULL,
+    lon       REAL NOT NULL
+);
+
 -- Zillow Observed Rent Index (typical market rent, all homes, smoothed). ZIPs and metros, from 2015.
 CREATE TABLE IF NOT EXISTS rents (
     region_id INTEGER NOT NULL REFERENCES regions(id) ON DELETE CASCADE,

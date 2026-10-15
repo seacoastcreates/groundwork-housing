@@ -28,6 +28,9 @@ SOURCES = {
     "census_counties.txt": "https://www2.census.gov/geo/docs/reference/codes2020/national_county2020.txt",
     "cbsa_delineation_2023.xlsx": "https://www2.census.gov/programs-surveys/metro-micro/geographies/"
                                   "reference-files/2023/delineation-files/list1_2023.xlsx",
+    # Census Gazetteer: an interior point (lat/lon) for every ZIP Code Tabulation Area, for the maps.
+    "census_zcta_gazetteer.zip": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/"
+                                 "2024_Gaz_zcta_national.zip",
 }
 # Extra series for the feature groups (tiers, rent, Zillow market activity).
 _DIRS = {"Zip_zhvi": "zhvi", "zori": "zori", "invt_fs": "invt_fs", "new_listings": "new_listings",
