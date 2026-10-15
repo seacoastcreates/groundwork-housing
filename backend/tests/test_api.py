@@ -75,3 +75,11 @@ def test_region_rent_own_or_metro():
     zips = client.get("/api/v1/zips", params={"metro_id": metro["id"], "sort": "size", "limit": 1000}).json()["items"]
     sources = {client.get(f"/api/v1/regions/{z['id']}").json()["rent"]["source"] for z in zips[-5:]}
     assert sources <= {"own", "metro"} and sources
+
+
+def test_regions_by_ids_keeps_order_and_skips_unknown():
+    metros = client.get("/api/v1/metros", params={"limit": 3}).json()["items"]
+    ids = [metros[2]["id"], 999999999, metros[0]["id"]]
+    got = client.get("/api/v1/regions", params={"ids": ",".join(map(str, ids))}).json()
+    assert [r["id"] for r in got] == [metros[2]["id"], metros[0]["id"]]
+    assert client.get("/api/v1/regions", params={"ids": "1,abc"}).status_code == 422

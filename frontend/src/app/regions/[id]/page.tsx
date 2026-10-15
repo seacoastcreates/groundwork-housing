@@ -5,6 +5,8 @@ import { api, monthLabel, pct, regionTitle, usd, usdChange } from "@/lib/api";
 import { Delta, RankMeter, SourceNote, StatTile } from "@/components/ui";
 import ZipExplorer from "@/components/ZipExplorer";
 import Affordability from "@/components/Affordability";
+import SaveButton from "@/components/SaveButton";
+import RecordVisit from "@/components/RecordVisit";
 import ValueChart from "@/components/ValueChart";
 import HeatCharts from "@/components/HeatCharts";
 
@@ -43,9 +45,13 @@ export default async function RegionPage({ params }: PageProps<"/regions/[id]">)
         )}
       </nav>
       <div className="eyebrow mt-4">{isZip ? `ZIP code · ${r.county ?? ""}` : r.kind === "msa" ? "Metro area" : "Nation"}</div>
-      <h1 className="display mt-1 text-4xl font-semibold">
-        {isZip ? <><span className="tabular">{r.name}</span> <span className="text-ink-2">{r.city}, {r.state}</span></> : r.name}
-      </h1>
+      <RecordVisit id={r.id} />
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="display text-4xl font-semibold">
+          {isZip ? <><span className="tabular">{r.name}</span> <span className="text-ink-2">{r.city}, {r.state}</span></> : r.name}
+        </h1>
+        <SaveButton id={r.id} name={isZip ? `ZIP ${r.name}` : r.name} />
+      </div>
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Typical home value" value={usd(r.value)}

@@ -99,12 +99,14 @@ function Th({ col, label, sorts, right = false }: {
   );
 }
 
-export function RegionTable({ rows, showRank = false, showMetro = false, sorts, stickyHeader = false }: {
+export function RegionTable({ rows, showRank = false, showMetro = false, sorts, stickyHeader = false, action }: {
   rows: RegionSummary[];
   showRank?: boolean;
   showMetro?: boolean;
   sorts?: Partial<Record<SortCol, HeaderSort>>;
   stickyHeader?: boolean;
+  /** Optional last cell per row, e.g. a save or remove button. */
+  action?: (r: RegionSummary) => React.ReactNode;
 }) {
   return (
     <table className="w-full text-sm">
@@ -116,17 +118,19 @@ export function RegionTable({ rows, showRank = false, showMetro = false, sorts, 
           <Th col="change_1y" label="Past year" sorts={sorts} right />
           <Th col="forecast" label="Next 12 months (80% range)" sorts={sorts} />
           {showRank && <Th col="rank" label="vs. metro" sorts={sorts} />}
+          {action && <th className="th"><span className="sr-only">Actions</span></th>}
         </tr>
       </thead>
       <tbody>
         {rows.map((r) => (
           <tr key={r.id} className="hover:bg-surface-2">
             <td className="td"><RegionLink r={r} /></td>
-            {showMetro && <td className="td text-ink-2">{r.metro_name ?? "Rural"}</td>}
+            {showMetro && <td className="td text-ink-2">{r.kind === "zip" ? (r.metro_name ?? "Rural") : "—"}</td>}
             <td className="td text-right tabular">{usd(r.value)}</td>
             <td className="td text-right"><Delta v={r.change_1y_pct} /></td>
             <td className="td"><ForecastCell r={r} /></td>
             {showRank && <td className="td"><RankMeter p={r.relative_rank_pct} /></td>}
+            {action && <td className="td w-px text-right">{action(r)}</td>}
           </tr>
         ))}
       </tbody>

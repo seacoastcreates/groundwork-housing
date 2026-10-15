@@ -167,6 +167,15 @@ def search(q: str = Query(..., min_length=2), limit: int = Query(12, le=50)) -> 
     return sorted(items, key=lambda r: (r["kind"] != "msa", r["size_rank"]))
 
 
+@api.get("/regions", response_model=list[RegionSummary])
+def regions(ids: str = Query(..., pattern=r"^\d+(,\d+){0,49}$", description="Up to 50 comma-separated region IDs")) -> list[dict]:
+    """Summaries for a list of regions, in the order given (unknown IDs are skipped)."""
+    wanted = [int(i) for i in ids.split(",")]
+    _, items = summaries("r.id = ANY(:ids)", limit=len(wanted), ids=wanted)
+    by_id = {r["id"]: r for r in items}
+    return [by_id[i] for i in dict.fromkeys(wanted) if i in by_id]
+
+
 @api.get("/regions/{region_id}", response_model=RegionDetail)
 def region(region_id: int, since: int = Query(2000, ge=1990)) -> dict:
     found = summaries("r.id = :id", limit=1, id=region_id)[1]
