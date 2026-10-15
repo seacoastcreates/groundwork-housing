@@ -90,7 +90,8 @@ class Overview(BaseModel):
 SORTS = {"size": "size_rank ASC", "forecast": "change_pct DESC NULLS LAST",
          "forecast_low": "change_pct ASC NULLS LAST", "relative": "relative_pct DESC NULLS LAST",
          "relative_low": "relative_pct ASC NULLS LAST", "change_1y": "change_1y_pct DESC NULLS LAST",
-         "change_1y_low": "change_1y_pct ASC NULLS LAST", "value": "value DESC NULLS LAST"}
+         "change_1y_low": "change_1y_pct ASC NULLS LAST", "value": "value DESC NULLS LAST",
+         "value_low": "value ASC NULLS LAST"}
 
 
 def summaries(where: str, filters: str = "TRUE", sort: str = "size", limit: int = 50, offset: int = 0,

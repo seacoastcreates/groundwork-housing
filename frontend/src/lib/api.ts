@@ -150,6 +150,16 @@ export const usdShort = (v: number) =>
 export const pct = (v: number | null | undefined, digits = 1) =>
   v == null ? "—" : `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(digits)}%`;
 
+/** Dollar change implied by a percent change on a value, e.g. "+$8,500" (or "+$33K" when short). */
+export function usdChange(value: number | null | undefined, changePct: number | null | undefined, short = false) {
+  if (value == null || changePct == null) return "—";
+  const d = (value * changePct) / 100;
+  const sign = d >= 50 ? "+" : d <= -50 ? "−" : "";
+  const abs = Math.abs(d);
+  const body = short && abs >= 1000 ? usdShort(abs) : `$${(Math.round(abs / 100) * 100).toLocaleString("en-US")}`;
+  return `${sign}${body}`;
+}
+
 export const monthLabel = (iso: string, short = false) =>
   new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString("en-US", {
     month: short ? "short" : "long",

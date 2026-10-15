@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
 import Link from "next/link";
+import HeaderSearch from "@/components/HeaderSearch";
 import NavLinks from "@/components/NavLinks";
 import "./globals.css";
 
@@ -26,11 +27,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} ${display.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <header className="sticky top-0 z-10 border-b border-line bg-surface/90 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3">
             <Link href="/" className="flex items-center gap-2.5">
               <Logo />
               <span className="display text-xl font-semibold">Groundwork</span>
             </Link>
+            <div className="order-last flex w-full justify-end empty:hidden sm:order-none sm:w-auto sm:flex-1">
+              <HeaderSearch />
+            </div>
             <NavLinks />
           </div>
         </header>

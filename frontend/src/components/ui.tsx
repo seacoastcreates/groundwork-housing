@@ -66,37 +66,79 @@ export function RegionLink({ r }: { r: RegionSummary }) {
   );
 }
 
-export function RegionTable({ rows, showRank = false, showMetro = false }: {
+export type SortCol = "area" | "value" | "change_1y" | "forecast" | "rank";
+export type SortDir = "asc" | "desc";
+/** How a column header sorts: a link (server-sorted pages) or a click handler (client-sorted tables). */
+export type HeaderSort = { dir: SortDir | null; href?: string; onClick?: () => void };
+
+function Th({ col, label, sorts, right = false }: {
+  col: SortCol;
+  label: string;
+  sorts?: Partial<Record<SortCol, HeaderSort>>;
+  right?: boolean;
+}) {
+  const s = sorts?.[col];
+  const cls = `th ${right ? "text-right" : ""}`;
+  if (!s) return <th className={cls}>{label}</th>;
+  const arrow = s.dir === "desc" ? "▼" : s.dir === "asc" ? "▲" : "";
+  const inner = (
+    <>
+      {label}
+      <span aria-hidden="true" className={`ml-1 inline-block w-2 text-[0.6rem] ${arrow ? "text-accent" : ""}`}>{arrow}</span>
+    </>
+  );
+  const btn = `inline-flex items-center uppercase tracking-[0.06em] hover:text-ink ${s.dir ? "text-ink" : ""}`;
+  return (
+    <th className={cls} aria-sort={s.dir === "desc" ? "descending" : s.dir === "asc" ? "ascending" : "none"}>
+      {s.href ? (
+        <Link href={s.href} scroll={false} className={btn}>{inner}</Link>
+      ) : (
+        <button type="button" onClick={s.onClick} className={btn}>{inner}</button>
+      )}
+    </th>
+  );
+}
+
+export function RegionTable({ rows, showRank = false, showMetro = false, sorts, stickyHeader = false }: {
   rows: RegionSummary[];
   showRank?: boolean;
   showMetro?: boolean;
+  sorts?: Partial<Record<SortCol, HeaderSort>>;
+  stickyHeader?: boolean;
 }) {
   return (
-    <div className="card overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr>
-            <th className="th">Area</th>
-            {showMetro && <th className="th">Metro</th>}
-            <th className="th text-right">Typical value</th>
-            <th className="th text-right">Past year</th>
-            <th className="th">Next 12 months (80% range)</th>
-            {showRank && <th className="th">vs. metro</th>}
+    <table className="w-full text-sm">
+      <thead className={stickyHeader ? "sticky top-0 z-10 bg-surface shadow-[0_1px_0_var(--border)]" : undefined}>
+        <tr>
+          <Th col="area" label="Area" sorts={sorts} />
+          {showMetro && <th className="th">Metro</th>}
+          <Th col="value" label="Typical value" sorts={sorts} right />
+          <Th col="change_1y" label="Past year" sorts={sorts} right />
+          <Th col="forecast" label="Next 12 months (80% range)" sorts={sorts} />
+          {showRank && <Th col="rank" label="vs. metro" sorts={sorts} />}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.id} className="hover:bg-surface-2">
+            <td className="td"><RegionLink r={r} /></td>
+            {showMetro && <td className="td text-ink-2">{r.metro_name ?? "Rural"}</td>}
+            <td className="td text-right tabular">{usd(r.value)}</td>
+            <td className="td text-right"><Delta v={r.change_1y_pct} /></td>
+            <td className="td"><ForecastCell r={r} /></td>
+            {showRank && <td className="td"><RankMeter p={r.relative_rank_pct} /></td>}
           </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id} className="hover:bg-surface-2">
-              <td className="td"><RegionLink r={r} /></td>
-              {showMetro && <td className="td text-ink-2">{r.metro_name ?? "Rural"}</td>}
-              <td className="td text-right tabular">{usd(r.value)}</td>
-              <td className="td text-right"><Delta v={r.change_1y_pct} /></td>
-              <td className="td"><ForecastCell r={r} /></td>
-              {showRank && <td className="td"><RankMeter p={r.relative_rank_pct} /></td>}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/** A RegionTable in a card. */
+export function RegionCard(props: React.ComponentProps<typeof RegionTable>) {
+  return (
+    <div className="card overflow-x-auto">
+      <RegionTable {...props} />
     </div>
   );
 }
