@@ -1,6 +1,6 @@
 # Groundwork: US home values and forecasts
 
-**Live at https://d25v76vfdz6twh.cloudfront.net** (API docs at `/api/v1/docs`). Source: https://github.com/seacoastcreates/groundwork-housing
+**Live at https://groundwork.36dunes.com** (API docs at `/api/v1/docs`). Source: https://github.com/seacoastcreates/groundwork-housing
 
 Typical home values for 894 metros and 26,268 ZIP codes, each with a 12-month forecast that has been
 backtested against nine years of real outcomes. This is the housing counterpart to the wine price tracker

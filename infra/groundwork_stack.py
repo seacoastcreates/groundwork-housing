@@ -13,6 +13,7 @@ from pathlib import Path
 
 from aws_cdk import CfnOutput, Duration, IgnoreMode, RemovalPolicy, Stack, Tags
 from aws_cdk import aws_budgets as budgets
+from aws_cdk import aws_certificatemanager as acm
 from aws_cdk import aws_cloudfront as cf
 from aws_cdk import aws_cloudfront_origins as origins
 from aws_cdk import aws_ec2 as ec2
@@ -31,13 +32,13 @@ REFRESH_SCHEDULE = "cron(0 6 20 * ? *)"
 UBUNTU_ARM64 = "/aws/service/canonical/ubuntu/server/24.04/stable/current/arm64/hvm/ebs-gp3/ami-id"
 SOURCE_EXCLUDES = [
     ".git", "**/node_modules", "**/.next", "**/.venv", "**/__pycache__", "**/*.egg-info", "**/.DS_Store",
-    "data", "ml/artifacts", "ml/*.log", "ml/reports/optuna.db", "deploy/bundle", "infra", "**/.env*",
+    "data", "ml/artifacts", "ml/*.log", "ml/reports/optuna.db", "deploy/bundle", "infra", "business", "**/.env*",
 ]
 
 
 class GroundworkStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, *, alert_email: str, cloudfront_prefix_list: str,
-                 monthly_budget_usd: int = 20, **kwargs) -> None:
+                 domain_name: str | None = None, monthly_budget_usd: int = 20, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         Tags.of(self).add("project", PROJECT)
 
@@ -194,11 +195,17 @@ class GroundworkStack(Stack):
         )
 
         # ---- CloudFront: HTTPS, and caching for Next.js static assets -----------------------------
+        # The custom domain's DNS is on Netlify (36dunes.com), not Route 53, so the certificate is validated
+        # by hand: the deploy waits until the CNAME that ACM asks for is added there.
+        cert = acm.Certificate(self, "SiteCert", domain_name=domain_name,
+                               validation=acm.CertificateValidation.from_dns()) if domain_name else None
         origin = origins.HttpOrigin(instance.instance_public_dns_name,
                                     protocol_policy=cf.OriginProtocolPolicy.HTTP_ONLY)
         dist = cf.Distribution(
             self, "Cdn",
             comment="Groundwork",
+            domain_names=[domain_name] if domain_name else None,
+            certificate=cert,
             price_class=cf.PriceClass.PRICE_CLASS_100,
             http_version=cf.HttpVersion.HTTP2_AND_3,
             default_behavior=cf.BehaviorOptions(
@@ -242,8 +249,9 @@ class GroundworkStack(Stack):
             ],
         )
 
-        CfnOutput(self, "SiteUrl", value=f"https://{dist.distribution_domain_name}")
-        CfnOutput(self, "ApiDocsUrl", value=f"https://{dist.distribution_domain_name}/api/v1/docs")
+        CfnOutput(self, "SiteUrl", value=f"https://{domain_name or dist.distribution_domain_name}")
+        CfnOutput(self, "CloudFrontDomain", value=dist.distribution_domain_name)
+        CfnOutput(self, "ApiDocsUrl", value=f"https://{domain_name or dist.distribution_domain_name}/api/v1/docs")
         CfnOutput(self, "InstanceId", value=instance.instance_id)
         CfnOutput(self, "BackupBucket", value=backups.bucket_name)
         CfnOutput(self, "ArtifactBucket", value=artifacts.bucket_name)
