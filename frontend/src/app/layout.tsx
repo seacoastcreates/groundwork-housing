@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
 import Link from "next/link";
 import HeaderSearch from "@/components/HeaderSearch";
+import DunesLogo from "@/components/DunesLogo";
 import NavLinks from "@/components/NavLinks";
 import "./globals.css";
 
@@ -51,6 +52,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 Source on GitHub
               </a>
             </span>
+          </div>
+          <div className="mx-auto max-w-6xl px-4 pb-6 text-center">
+            <a href="https://36dunes.com" className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
+              Made by <DunesLogo size={18} /> <span className="font-semibold">36 Dunes</span>
+            </a>
           </div>
         </footer>
       </body>
